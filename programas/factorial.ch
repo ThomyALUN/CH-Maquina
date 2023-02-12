@@ -1,5 +1,7 @@
 nueva unidad I 1
+//Este programa cálcula el factorial de un número
 nueva m I 5
+
 nueva respuesta I 1
 nueva intermedia I 0
 cargue m
@@ -7,7 +9,7 @@ almacene respuesta
 reste unidad
 almacene intermedia
 cargue respuesta
-multipique intermedia
+multiplique intermedia
 almacene respuesta
 cargue intermedia
 reste unidad
@@ -17,3 +19,4 @@ etiqueta fin 19
 muestre respuesta
 imprima respuesta
 retorne 0
+etiqueta acumulador 23
