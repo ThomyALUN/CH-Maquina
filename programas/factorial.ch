@@ -19,4 +19,3 @@ etiqueta fin 19
 muestre respuesta
 imprima respuesta
 retorne 0
-etiqueta acumulador 23
