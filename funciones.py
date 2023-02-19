@@ -2,11 +2,7 @@ from clases import *
 
 z=1                                                                                 #Último dígito del documento
 posAcum=0                                                                           #Por defecto, el acumulador irá en la posición 0
-palabrasReservadasCH=[                                                               
-'acumulador','cargue','almacene','nueva','lea','sume', 'reste', 'multiplique', 
-'divida', 'potencia', 'modulo', 'concatene', 'elimine', 'extraiga', 'Y', 'O',       #Palabras reservadas en el lenguaje CH
-'NO', 'muestre', 'imprima', 'retorne', 'vaya', 'vayasi', 'etiqueta', 'logaritmo'
-]
+palabrasReservadasCH=['acumulador']                                                 #Palabras reservadas en el lenguaje CH  
 
 def revisarValorInicial(cadena, tipo):
 
@@ -43,25 +39,26 @@ def revisarValorInicial(cadena, tipo):
 
     return validez
 
-def inicializarMemoria(z, posAcum, vectorMemoria):
+def inicializarMemoria(z, posAcum):
     sizeKernel=z*10+9
     sizeMemoria=z*10+50
-    vectorMemoria=[None for i in range(sizeMemoria)] #Por convención, el tipo de dato None representará espacios de memoria vacíos
+    vectorMemoria=[None for i in range(sizeMemoria)]    #Por convención, el tipo de dato None representará espacios de memoria vacíos
 
-    vectorMemoria[posAcum]=Acumulador() #El acumulador toma un valor arbitrario para diferenciarlo del resto de espacios de memoria
+    vectorMemoria[posAcum]=Acumulador()                 #El acumulador toma un valor arbitrario para diferenciarlo del resto de espacios de memoria
 
     #Se llenan los siguientes espacios de memoria con el kernel
     kernelVacio=Kernel()
     for i in range(1,(sizeKernel+1)):
         vectorMemoria[i]=kernelVacio
 
-    # print(f'El valor de z es {z}, el tamaño del kernel es de {sizeKernel} y el tamaño inicial de memoria es de {sizeMemoria}.')
-    # print(vectorMemoria)
+    posDispMem=sizeKernel+1                             #Se calcula la posición de memoria desde la cual hay espacios libres
+    return vectorMemoria, posDispMem
 
 def revisionRapida(lineasCodigo):
 
     validez=True                    #Inicialmente se asume que el código no tiene errores
     omitirLineas=[]
+    posRetorne=None
 
     #Este diccionario usa como llave los comandos del lenguaje CH y su valor es una lista con la cantidad de argumentos posibles
     comandosCH={
@@ -83,7 +80,6 @@ def revisionRapida(lineasCodigo):
         'NO': [3], 
         'muestre': [2], 
         'imprima': [2], 
-        'retorne': [1,2], 
         'vaya': [2], 
         'vayasi': [3], 
         'etiqueta': [3], 
@@ -92,82 +88,94 @@ def revisionRapida(lineasCodigo):
     
     for i in range(len(lineasCodigo)):
         renglon=lineasCodigo[i]
-        if renglon==[]:                                 #Este condicional detecta las líneas en blanco
+        if renglon==[]:                                                                 #Este condicional detecta las líneas en blanco
             omitirLineas.append(i)
-        elif renglon[0][0:2]=="//":                     #Este condicional detecta los comentarios
+        elif renglon[0][0:2]=="//":                                                     #Este condicional detecta los comentarios
             omitirLineas.append(i)
-        elif renglon[0] in comandosCH.keys():           #Este condicional detecta si la primera palabra de la línea de código es alguno de los comandosCH
+        elif renglon[0]=="retorne" and (len(renglon)==1 or len(renglon)==2):            #Este condicional detecta la línea en que se encuentra el retorne
+            posRetorne=i
+            break
+        elif renglon[0] in comandosCH.keys():                                           #Este condicional detecta si la primera palabra de la línea de código es alguno de los comandosCH
             llave=renglon[0]
-            sizeRenglon=len(renglon)                        #Acá de cálcula la cantidad de palabras en la línea de código
-            sizeComando=comandosCH[llave]                   #Acá se revisa la cantidad de palabras que puede/debe tener la línea de código según el comando
-            if sizeRenglon not in sizeComando:              #Se detecta si la cantidad en la línea no es válida
+            sizeRenglon=len(renglon)                                                    #Acá de cálcula la cantidad de palabras en la línea de código
+            sizeComando=comandosCH[llave]                                               #Acá se revisa la cantidad de palabras que puede/debe tener la línea de código según el comando
+            if sizeRenglon not in sizeComando:                                          #Se detecta si la cantidad en la línea no es válida
                 print(f"La longitud de la línea {i+1} es inválida.")
                 validez=False
                 omitirLineas=None
                 break
-        else:                                           #En este caso, se detecta que hay una línea que no es un comentario, una línea en blanco o un comandoCH por lo que hay un error de sintaxis y se actualiza el valor booleano
-            print(f"Hay un error de sintaxis en la línea {i+1}. No es un comentario o una línea en blanco, y tampoco comienza")
+        else:                                                                           #En este caso, se detecta que hay una línea que no es un comentario, una línea en blanco o un comandoCH por lo que hay un error de sintaxis y se actualiza el valor booleano
+            print(f"Hay un error de sintaxis en la línea {i+1}. No es un comentario o una línea en blanco, y tampoco comienza con un comando.")
             validez=False
             omitirLineas=None
             break
 
-    return validez, omitirLineas                                   #Se devuelve True o False, según el resultado del chequeo rápido de las líneas
+    if posRetorne:
+        return validez, omitirLineas, posRetorne                                        #Se devuelve True o False, según el resultado del chequeo rápido de las líneas, la posición de las líneas en blanco y líneas de comentarios, y la posición donde se encontro la primera sentencia retorne
+    else:
+        return False, None, None
 
-def busquedaEtiquetas(lineasCodigo, omitirLineas, cantidadComandos):
+def busquedaEtiquetas(lineasCodigo, omitirLineas, posRetorne, cantidadComandos):
 
     validez=True
-    listaEtiquetas=[]
+    diccEtiquetas={}
 
-    for i in range(len(lineasCodigo)):
+    for i in range(posRetorne):                                     #Se llega hasta antes de la sentencia retorne
         if i not in omitirLineas:                                   #Se omiten los comentarios y líneas en blanco
             renglon=lineasCodigo[i]
             comando=renglon[0]
             if comando=="etiqueta":                                 #Se detecta si es una línea que declara una etiqueta
                 nombreEtiqueta=renglon[1]
-                posicionEtiqueta=renglon[2]
+                posicionEtiqueta=int(renglon[2])
                 if nombreEtiqueta in palabrasReservadasCH:          #Se detecta si el nombre de la etiqueta es una palabra reservada del lenguaje CH
                     print(f"{nombreEtiqueta} es una palabra reservada y no puede utilizarse para una etiqueta.")
                     validez=False
                     break
-                elif int(posicionEtiqueta)>cantidadComandos:        #Se detecta si la posición para la etiqueta sobrepasa la cantidad de comandos en el archivo
+                elif posicionEtiqueta>cantidadComandos:        #Se detecta si la posición para la etiqueta sobrepasa la cantidad de comandos en el archivo
                     print(f"La etiqueta no puede asignarse a la posición {posicionEtiqueta} ya que esta sobrepasa la cantidad.")
                     validez=False
                     break
                 else:
-                    listaEtiquetas.append(nombreEtiqueta)
+                    lineaEtiqueta=0                                 #Se calcula la línea de código a la cual debe apuntar la etiqueta(linea etiqueta cuenta de 1 a n, mientras los indices del SO van de 0 a n-1)
+                    for j in range(posRetorne+1):
+                        if j not in omitirLineas:
+                            lineaEtiqueta+=1
+                        if lineaEtiqueta==posicionEtiqueta:
+                            break
+                    diccEtiquetas.update({nombreEtiqueta:j})        #Se genera un diccionario con el nombre de la etiqueta como la clave y la linea de código a la que apunta como el valor
 
-    return validez, listaEtiquetas
+    return validez, diccEtiquetas
 
-def revisionEtiquetas(lineasCodigo, omitirLineas, listaEtiquetas):
+def revisionEtiquetas(lineasCodigo, omitirLineas, posRetorne, diccEtiquetas):
 
     validez=True
 
-    for i in range(len(lineasCodigo)):
+    for i in range(posRetorne):                                 #Se llega hasta antes de la sentencia retorne
         if i not in omitirLineas:                               #Se omiten los comentarios y líneas en blanco
             renglon=lineasCodigo[i]
             comando=renglon[0]
             if comando=="vaya":                                 #Se analizan las líneas con comando "vaya" y su etiqueta
                 print(f"vaya {renglon[1]}")
                 etiqueta=renglon[1]
-                if etiqueta not in listaEtiquetas:              #Se detecta si la etiqueta no se encuentra declarada en ninguna parte del código
+                if etiqueta not in diccEtiquetas:              #Se detecta si la etiqueta no se encuentra declarada en ninguna parte del código
                     print(f"La etiqueta {etiqueta} no ha sido declarada en el cuerpo del código.")
                     validez=False
                     break
             elif comando=="vayasi":                             #Se analizan las líneas con comando "vayasi" y sus etiquetas
                 etiqueta1=renglon[1]
                 etiqueta2=renglon[2]
-                if (etiqueta1 not in listaEtiquetas):           #Se detecta si la primera etiqueta no se encuentra declarada en ninguna parte del código
+                if (etiqueta1 not in diccEtiquetas):           #Se detecta si la primera etiqueta no se encuentra declarada en ninguna parte del código
                     print(f"La etiqueta {etiqueta1} no ha sido declarada en el cuerpo del código.")
                     validez=False
                     break
-                elif (etiqueta2 not in listaEtiquetas):         #Se detecta si la segunda etiqueta no se encuentra declarada en ninguna parte del código
+                elif (etiqueta2 not in diccEtiquetas):         #Se detecta si la segunda etiqueta no se encuentra declarada en ninguna parte del código
                     print(f"La etiqueta {etiqueta2} no ha sido declarada en el cuerpo del código.")
                     validez=False
                     break
 
     return validez
 
-def busquedaVariables(lineasCodigo, omitirLineas):
+def busquedaVariables(lineasCodigo, omitirLineas, posRetorne):
 
     validez=True
     diccVariables={}    #Este diccionario usa como llave el nombre de la variable y como valor la línea de código donde fue declarada (0 hasta tamaño-1). 
@@ -179,7 +187,7 @@ def busquedaVariables(lineasCodigo, omitirLineas):
         "L",    #Booleano (0-1)
     ]
 
-    for i in range(len(lineasCodigo)):
+    for i in range(posRetorne):                                     #Se llega hasta antes de la sentencia retorne
         if i not in omitirLineas:                                                                                       #Se omiten los comentarios y líneas en blanco
             renglon=lineasCodigo[i]
             comando=renglon[0]
@@ -200,11 +208,15 @@ def busquedaVariables(lineasCodigo, omitirLineas):
                     validez=False
                     break
                 else:
-                    diccVariables.update({nombreVariable:i})                                                                #En caso de que la sintaxis este correcta, se almacena el nombre de la variable y la línea de código en que se declaró
+                    if len(renglon)==3:
+                        valorInicial=None
+                    else:
+                        valorInicial=renglon[3]
+                    diccVariables.update({nombreVariable:[i, tipo, valorInicial]})                                                                #En caso de que la sintaxis este correcta, se almacena el nombre de la variable y la línea de código en que se declaró
 
     return validez, diccVariables
 
-def revisionVariables(lineasCodigo, omitirLineas, diccVariables):
+def revisionVariables(lineasCodigo, omitirLineas, posRetorne, diccVariables):
 
     validez=True
 
@@ -230,7 +242,7 @@ def revisionVariables(lineasCodigo, omitirLineas, diccVariables):
         'logaritmo': 1
     }
 
-    for i in range(len(lineasCodigo)):
+    for i in range(posRetorne):                                                                                     #Se llega hasta antes de la sentencia retorne
         if i not in omitirLineas:                                                                                   #Se omiten los comentarios y líneas en blanco
             renglon=lineasCodigo[i]
             comando=renglon[0]
@@ -245,14 +257,15 @@ def revisionVariables(lineasCodigo, omitirLineas, diccVariables):
                         break
                     else:
                         lineaDeclaracion=diccVariables.get(nombreVariable,None)
-                        if i<lineaDeclaracion or lineaDeclaracion==None:                                            #Se detectan las variables utilizadas antes de su declaración o que son utilizadas sin ser declaradas en ninguna parte del código
+                        if type(lineaDeclaracion)==list:
+                            lineaDeclaracion=lineaDeclaracion[0]
+                        if lineaDeclaracion==None or i<lineaDeclaracion:                                            #Se detectan las variables utilizadas antes de su declaración o que son utilizadas sin ser declaradas en ninguna parte del código
                             print(f"La variable {nombreVariable} no fue declarada antes de su uso.")
                             validez=False
                             break
                 if not validez: break                                                                               #Se termina la revisión línea por línea si se ha encontrado alguna anomalía en el uso de variables
 
     return validez
-
 
 def chequeoSintaxis(ruta):
 
@@ -263,42 +276,96 @@ def chequeoSintaxis(ruta):
     for i in range(len(lineasCodigo)):
         lineasCodigo[i]=lineasCodigo[i].strip() #Con esto se quitan los espacios en blanco y saltos de línea a izquierda y derecha del texto
         lineasCodigo[i]=lineasCodigo[i].split() #Con esto se separan las palabras de la cadena de texto
-    print(lineasCodigo,"\n")
 
-    validez1, omitirLineas=revisionRapida(lineasCodigo)
+    validez1, omitirLineas, posRetorne=revisionRapida(lineasCodigo)
 
-    if not validez1:  return False                                  #Si se detecta un error en el primer paso de la revisión, se termina el chequeo de sintaxis
+    if not validez1:  return False                           #Si se detecta un error en el primer paso de la revisión, se termina el chequeo de sintaxis
     
     print("Primer paso válido\n")
     cantidadComandos=len(lineasCodigo)-len(omitirLineas)            #Se cálcula la cantidad de líneas con comandos hay en el archivo leído 
 
-    validez2, listaEtiquetas=busquedaEtiquetas(lineasCodigo, omitirLineas, cantidadComandos)
+    validez2, diccEtiquetas=busquedaEtiquetas(lineasCodigo, omitirLineas, posRetorne, cantidadComandos)
 
-    if not validez2:  return False                                  #Si se detecta un error en el segundo paso de la revisión, se termina el chequeo de sintaxis
+    if not validez2:  return False                           #Si se detecta un error en el segundo paso de la revisión, se termina el chequeo de sintaxis
 
     print("Segundo paso válido\n")
-    print(f"Lista de etiquetas: {listaEtiquetas}\n")
-    validez3=revisionEtiquetas(lineasCodigo, omitirLineas, listaEtiquetas)
+    print(f"Lista de etiquetas: {diccEtiquetas}\n")
+    validez3=revisionEtiquetas(lineasCodigo, omitirLineas, posRetorne, diccEtiquetas)
 
-    if not validez3:  return False                                  #Si se detecta un error en el tercer paso de la revisión, se termina el chequeo de sintaxis
+    if not validez3:  return False                           #Si se detecta un error en el tercer paso de la revisión, se termina el chequeo de sintaxis
 
     print("Tercer paso válido\n")
-    validez4, diccVariables=busquedaVariables(lineasCodigo, omitirLineas)
+    validez4, diccVariables=busquedaVariables(lineasCodigo, omitirLineas, posRetorne)
 
-    if not validez4: return False                                   #Si se detecta un error en el cuarto paso de la revisión, se termina el chequeo de sintaxis
+    if not validez4: return False                            #Si se detecta un error en el cuarto paso de la revisión, se termina el chequeo de sintaxis
 
     print("Cuarto paso válido\n")
 
     print(f"Lista de variables: {diccVariables}\n")
 
-    validez5=revisionVariables(lineasCodigo, omitirLineas, diccVariables)
+    validez5=revisionVariables(lineasCodigo, omitirLineas, posRetorne, diccVariables)
 
-    if not validez5: return False                                   #Si se detecta un error en el cuarto paso de la revisión, se termina el chequeo de sintaxis
+    if not validez5: return False                            #Si se detecta un error en el cuarto paso de la revisión, se termina el chequeo de sintaxis
 
     print("Quinto paso válido\n")
 
+    celdasMemNecesarias=posRetorne+len(diccEtiquetas)+len(diccVariables.keys())
+    return True, celdasMemNecesarias, posRetorne, diccEtiquetas, diccVariables
+
+def cargarPrograma(ruta, posDispMem, vectorMemoria):
+
+    tupla=chequeoSintaxis(ruta)
+    if len(tupla)>1:
+        sintaxisValida, celdasMemNecesarias, posRetorne, diccEtiquetas, diccVariables=tupla
+    else:
+        sintaxisValida=tupla
+
+    with open(ruta,'r') as archivo:                         #Se vuelve a leer el archivo línea por línea
+        lineasCodigo=archivo.readlines()
+
+    for i in range(len(lineasCodigo)):                      #En este caso, solo se quitan los saltos de línea de cada renglon leído
+        lineasCodigo[i]=lineasCodigo[i].rstrip()
+
+    if not sintaxisValida: 
+        print("La sintaxis del programa tiene errores.")
+        return False
+    elif (len(vectorMemoria)-(posDispMem+1))<celdasMemNecesarias:
+        print("No hay suficiente espacio en memoria.")
+        return False
+
+    for i in range(posRetorne+1):               #Se cargan en memoria las líneas de código halladas antes del retorne
+        vectorMemoria[i+posDispMem]=lineasCodigo[i]
+    
+    for key in diccEtiquetas.keys():            #Se ubican correctamente las direcciones las que apuntan las etiquetas
+        diccEtiquetas[key]=diccEtiquetas[key]+posDispMem 
+        print(f"La etiqueta {key} apunta a la dirección de memoria {diccEtiquetas[key]}")
+
+    posDispMem=posDispMem+posRetorne+1          #Nueva ubicación de las posiciones de memoria disponibles
+
+    listaVariables=[]                           #Se crea una lista con objetos de tipo variable que serán cargados en la memoria
+    for key, value in diccVariables.items():
+        nombreVariable=key
+        datosVariable=value
+        tipo=datosVariable[1]
+        valorInicial=datosVariable[2]
+        variableMemoria=Variable(nombreVariable, tipo, valorInicial)
+        listaVariables.append(variableMemoria)
+
+    print("")
+    posVariablesMem={}                          #Se almacena el nombre de las variables usadas por el programa y su dirección de memoria
+    for i in range(len(listaVariables)):
+        nombreVariable=listaVariables[i].getNombre()
+        vectorMemoria[i+posDispMem]=listaVariables[i]
+        posVariablesMem.update({nombreVariable:i+posDispMem})
+        print(f"La variable {nombreVariable} será almacenada en la posición de memoria {i+posDispMem}")
+
+    print("")
+    print(f"Luego de cargar el programa y las variables en memoria, se obtiene lo siguiente en el vector memoria:\n{vectorMemoria}")
+
 
 #main
-vectorMemoria=[]
-inicializarMemoria(z, posAcum, vectorMemoria)
-chequeoSintaxis('programas/factorial.ch')
+vectorMemoria, posDispMem=inicializarMemoria(z, posAcum)
+print("***"*5+"INICIO PROGRAMA"+"***"*5+"\n")
+print(f"Inicialización memoria: {vectorMemoria}")
+print(f"\nLuego de separar espacio para el acumulador y el kernel, hay espacio dispinible desde la posición {posDispMem}.\n")
+cargarPrograma('programas/factorial.ch', posDispMem, vectorMemoria)

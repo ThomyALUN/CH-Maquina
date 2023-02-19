@@ -13,13 +13,6 @@ class Kernel():
 #Esta clase servirá para representar las variables declaradas en el programa
 class Variable():
 
-    diccionarioTipos={
-        "C": str,
-        "I": int,
-        "R": float,
-        "L": bool
-    }
-
     valorTipos={
         "C": " ",
         "I": 0,
@@ -29,10 +22,22 @@ class Variable():
 
     def __init__(self, nombre, tipo, valorInicial=None):
         self.__nombre=nombre
-        self.__tipo=self.diccionarioTipos[tipo]
+        self.__tipo=tipo
 
         #Se asigna el valor inicial entregado o uno por defecto
         if valorInicial!=None:
             self.__valor=valorInicial
         else:
             self.__valor=self.valorTipos[tipo]
+
+    def getNombre(self):
+        return self.__nombre
+    
+    def getTipo(self):
+        return self.__tipo
+    
+    def getValor(self):
+        return self.__valor
+    
+    def setValor(self,nuevoValor):
+        self.__valor=nuevoValor
