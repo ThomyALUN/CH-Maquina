@@ -1,8 +1,50 @@
 from clases import *
+from math import log10, ceil
 
 z=1                                                                                 #Último dígito del documento
 posAcum=0                                                                           #Por defecto, el acumulador irá en la posición 0
-palabrasReservadasCH=['acumulador']                                                 #Palabras reservadas en el lenguaje CH  
+palabrasReservadasCH=['acumulador']                                                 #Palabras reservadas en el lenguaje CH 
+
+#Se exporta todo lo que hay en la memoria en un archivo .txt
+def guardarMemoriaTXT(vectorMemoria):
+    archivo=open("memoria.txt","w")
+    for i in range(len(vectorMemoria)):
+        linea=vectorMemoria[i]
+        pos=i+1
+        cadena=f"{agregarCeros(pos,4)}"
+        if type(linea)==Acumulador:
+            cadena=f"{cadena}\tAcumulador\n"
+        elif type(linea)==Kernel:
+            cadena=f"{cadena}\tKernel\n"
+        elif type(linea)==Variable:
+            cadena=f"{cadena}\t{linea.getValor()}\n"
+        else:
+            cadena=f"{cadena}\t{linea}\n"
+        archivo.write(cadena)
+    archivo.close()
+
+#Se agregan 0's para dar formato a la posición de memoria mostrada al usuario
+def agregarCeros(pos, ceros):
+    cifras=ceil(log10(pos))
+    diferencia=ceros-cifras
+    numFormateado=""
+
+    if potencia10(pos) or pos==1:
+        diferencia-=1
+    
+    for i in range(diferencia):
+        numFormateado+="0"
+    numFormateado+=str(pos)
+    return numFormateado
+
+#Se calcula si un número es potencia de 10
+def potencia10(num):
+    potencia=False
+    while num>=10:
+        num=num/10
+        if num==1:
+            potencia=True
+    return potencia
 
 def revisarValorInicial(cadena, tipo):
 
@@ -361,6 +403,7 @@ def cargarPrograma(ruta, posDispMem, vectorMemoria):
 
     print("")
     print(f"Luego de cargar el programa y las variables en memoria, se obtiene lo siguiente en el vector memoria:\n{vectorMemoria}")
+    guardarMemoriaTXT(vectorMemoria)
 
 
 #main
