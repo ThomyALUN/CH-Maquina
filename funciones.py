@@ -10,7 +10,7 @@ def guardarMemoriaTXT(vectorMemoria):
     archivo=open("memoria.txt","w")
     for i in range(len(vectorMemoria)):
         linea=vectorMemoria[i]
-        pos=i+1
+        pos=i
         cadena=f"{agregarCeros(pos,4)}"
         if type(linea)==Acumulador:
             cadena=f"{cadena}\tAcumulador\n"
@@ -23,9 +23,32 @@ def guardarMemoriaTXT(vectorMemoria):
         archivo.write(cadena)
     archivo.close()
 
+#Se exporta la ubicación y el valor de las variables en un archivo .txt
+def guardarVariablesTXT(vectorMemoria, posVariablesMem):
+    archivo=open("variables.txt","w")
+    cadena="Pos \tVariables\tValores\n"
+    archivo.write(cadena)
+    for variable, pos in posVariablesMem.items():
+        cadena=f"{agregarCeros(pos,4)}\t{variable}\t{vectorMemoria[pos].getValor()}\n"
+        archivo.write(cadena)
+    archivo.close()
+
+#Se exporta la dirección de apuntado y nombre de las etiquetas
+def guardarEtiquetasTXT(diccEtiquetas):
+    archivo=open("etiquetas.txt","w")
+    cadena="Pos \tEtiquetas\n"
+    archivo.write(cadena)
+    for etiqueta, pos in diccEtiquetas.items():
+        cadena=f"{agregarCeros(pos,4)}\t{etiqueta}\n"
+        archivo.write(cadena)
+    archivo.close()
+
 #Se agregan 0's para dar formato a la posición de memoria mostrada al usuario
 def agregarCeros(pos, ceros):
-    cifras=ceil(log10(pos))
+    if pos!=0:
+        cifras=ceil(log10(pos))
+    else:
+        cifras=1
     diferencia=ceros-cifras
     numFormateado=""
 
@@ -362,16 +385,17 @@ def cargarPrograma(ruta, posDispMem, vectorMemoria):
     else:
         sintaxisValida=tupla
 
+    if not sintaxisValida: 
+        print("La sintaxis del programa tiene errores.")
+        return False
+
     with open(ruta,'r') as archivo:                         #Se vuelve a leer el archivo línea por línea
         lineasCodigo=archivo.readlines()
 
     for i in range(len(lineasCodigo)):                      #En este caso, solo se quitan los saltos de línea de cada renglon leído
         lineasCodigo[i]=lineasCodigo[i].rstrip()
-
-    if not sintaxisValida: 
-        print("La sintaxis del programa tiene errores.")
-        return False
-    elif (len(vectorMemoria)-(posDispMem+1))<celdasMemNecesarias:
+    
+    if (len(vectorMemoria)-(posDispMem+1))<celdasMemNecesarias:
         print("No hay suficiente espacio en memoria.")
         return False
 
@@ -403,8 +427,9 @@ def cargarPrograma(ruta, posDispMem, vectorMemoria):
 
     print("")
     print(f"Luego de cargar el programa y las variables en memoria, se obtiene lo siguiente en el vector memoria:\n{vectorMemoria}")
+    guardarEtiquetasTXT(diccEtiquetas)
+    guardarVariablesTXT(vectorMemoria, posVariablesMem)
     guardarMemoriaTXT(vectorMemoria)
-
 
 #main
 vectorMemoria, posDispMem=inicializarMemoria(z, posAcum)
