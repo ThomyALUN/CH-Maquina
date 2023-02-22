@@ -3,6 +3,19 @@ class Acumulador():
 
     def __init__(self):
         self.__valor=None
+        self.__tipo=None
+
+    def getTipo(self):
+        return self.__tipo
+    
+    def getValor(self):
+        return self.__valor
+
+    def setTipo(self, nuevoTipo):
+        self.__tipo=nuevoTipo
+    
+    def setValor(self, nuevoValor):
+        self.__valor=nuevoValor
 
 #Esta clase representará el kernel, pero realmente no contendrá nada, solo será para diferenciarla de los demás tipos de datos en la memoria
 class Kernel():
@@ -17,7 +30,7 @@ class Variable():
         "C": " ",
         "I": 0,
         "R": 0.0,
-        "L": False
+        "L": 0
     }
 
     def __init__(self, nombre, tipo, valorInicial=None):

@@ -43,6 +43,18 @@ def guardarEtiquetasTXT(diccEtiquetas):
         archivo.write(cadena)
     archivo.close()
 
+#Se exporta el valor de una variable a la impresora
+def imprima(valor):
+    cadena=f"RESULTADO: {valor}"
+    with open("impresora.txt","w") as archivo:
+        archivo.write(cadena)
+
+#Se exporta el valor de una variable a la pantalla
+def muestre(valor):
+    cadena=f"RESULTADO: {valor}"
+    with open("pantalla.txt","w") as archivo:
+        archivo.write(cadena)
+
 #Se agregan 0's para dar formato a la posición de memoria mostrada al usuario
 def agregarCeros(pos, ceros):
     if pos!=0:
@@ -68,6 +80,158 @@ def potencia10(num):
         if num==1:
             potencia=True
     return potencia
+
+def ejecutarPaso(apuntador, vectorMemoria, diccEtiquetas, posVariablesMem, omitirLineasGlobal):
+    valido=True                             #Se asume que el funcionamiento es correcto
+    fin=False                               #Se asume que la línea no es de retorno
+    linea=vectorMemoria[apuntador]
+    tipoDato=type(vectorMemoria[apuntador])
+    aritmeticos=["sume", "reste", "multiplique", "divida", "potencia", "modulo"]
+    proxDirecc=apuntador+1
+    if apuntador not in omitirLineasGlobal and tipoDato!=Variable and linea!=None:
+        linea=linea.split()
+        comando=linea[0]
+        print(f"{apuntador}:{linea}",end="")
+        if comando=="nueva" or comando=="etiqueta":
+            print(f" :Línea ignorada", end="")
+        elif comando=="cargue":
+            #Se traen los datos de la variable a cargar al acumulador
+            variable=linea[1]
+            posVar=posVariablesMem[variable]
+            objetoVar=vectorMemoria[posVar]
+            valor=objetoVar.getValor()
+            tipo=objetoVar.getTipo()
+
+            #Se suben los datos al acumulador
+            objetoAcum=vectorMemoria[0]
+            objetoAcum.setTipo(tipo)
+            objetoAcum.setValor(valor)
+            vectorMemoria[0]=objetoAcum
+            
+            #print(f": Variable a cargar {variable}:{posVar}:{vectorMemoria[posVar]}:Valor={valor}:Tipo={tipo}")
+        elif comando=="almacene":
+            #Se cargan los datos de la variable a sobreescribir
+            variable=linea[1]
+            posVar=posVariablesMem[variable]
+            objetoVar=vectorMemoria[posVar]
+            tipoVar=objetoVar.getTipo()
+
+            #Se obtiene el tipo de dato del acumulador
+            objetoAcum=vectorMemoria[0]
+            tipoAcum=objetoAcum.getTipo()
+
+            if tipoVar==tipoAcum:               #Se comprueba que el tipo de dato del acumulador es el mismo que el tipo de dato de la variable
+                valorAcum=objetoAcum.getValor()
+                objetoVar.setValor(valorAcum)
+                vectorMemoria[posVar]=objetoVar
+            elif tipoVar=="I" and tipoAcum=="R":
+                valorAcum=objetoAcum.getValor()
+                objetoVar.setValor(int(valorAcum))
+                vectorMemoria[posVar]=objetoVar
+            else:
+                print(f"\nTipo de dato inválido {tipoVar} y {tipoAcum} no son equivalentes.")
+                valido=False
+        
+        elif comando in aritmeticos:
+            variable=linea[1]
+            posVar=posVariablesMem[variable]
+            objetoVar=vectorMemoria[posVar]
+            tipoVar=objetoVar.getTipo()
+            if tipoVar!="I" and tipoVar!="R":
+                print(f"La variable {variable} no tiene el tipo de dato entero o real, por lo tanto no se puede realizar la operación.")
+                valido=False
+            else:
+                valorVar=objetoVar.getValor()
+                objetoAcum=vectorMemoria[0]
+                tipoAcum=objetoAcum.getTipo()
+                if tipoAcum!="I" and tipoAcum!="R":
+                    print(f"El acumulador no tiene el tipo de dato entero o real, por lo tanto no se puede realizar la operación.")
+                    valido=False
+                else:
+                    valorAcum=objetoAcum.getValor()
+                    if comando=="sume": 
+                        valorAcum+=valorVar
+                    elif comando=="reste": 
+                        valorAcum-=valorVar
+                    elif comando=="multiplique": 
+                        valorAcum*=valorVar
+                    else:
+                        if (comando=="divida" or comando=="modulo") and valorVar==0: 
+                            print(f"El valor del divisor es 0. El programa no puede continuar.")
+                            valido=False
+                        elif comando=="divida":
+                            valorAcum/=valorVar
+                        elif comando=="modulo":
+                            valorAcum%=valorVar
+                        elif comando=="potencia" and tipoVar=="I": 
+                            valorAcum=pow(valorAcum, valorVar)
+                        else:
+                            print(f"El valor del exponente no es entero ({valorVar}). El programa no puede continuar.")
+                            valido=False
+
+                    if valido:
+                        objetoAcum.setValor(valorAcum)
+                        vectorMemoria[0]=objetoAcum
+        
+        elif comando=="vaya":
+            etiqueta=linea[1]
+            proxDirecc=diccEtiquetas[etiqueta]
+        elif comando=="vayasi":
+            objetoAcum=vectorMemoria[0]
+            tipoAcum=objetoAcum.getTipo()
+            if tipoAcum=="C":
+                print(f"No es posible continuar con el programa. El valor del acumulador no es númerico y no permite tomar una decisión.")
+            else:
+                valorAcum=objetoAcum.getValor()
+                if valorAcum>0:
+                    etiqueta1=linea[1]
+                    proxDirecc=diccEtiquetas[etiqueta1]
+                elif valorAcum<0:
+                    etiqueta2=linea[2]
+                    proxDirecc=diccEtiquetas[etiqueta2]
+        elif comando=="muestre":
+            variable=linea[1]
+            if variable!="acumulador":
+                posVar=posVariablesMem[variable]
+                objeto=vectorMemoria[posVar]
+            else:
+                objeto=vectorMemoria[0]
+            valor=objeto.getValor()
+            muestre(valor)
+        elif comando=="imprima":
+            variable=linea[1]
+            if variable!="acumulador":
+                posVar=posVariablesMem[variable]
+                objeto=vectorMemoria[posVar]
+            else:
+                objeto=vectorMemoria[0]
+            valor=objeto.getValor()
+            imprima(valor)
+        elif comando=="retorne":
+            fin=True
+    else:   #Se detectan los comentarios o líneas en blanco
+        print(f"{apuntador}: Linea omitida",end="")
+
+    print("")
+    if not valido:
+        return valido
+
+    print(vectorMemoria[0].getValor(), vectorMemoria[0].getTipo())
+    guardarMemoriaTXT(vectorMemoria)
+    guardarVariablesTXT(vectorMemoria, posVariablesMem)
+
+    apuntador=proxDirecc
+    return apuntador, valido, fin
+
+def ejecutarTodo(apuntador, vectorMemoria, diccEtiquetas, posVariablesMem, omitirLineasGlobal):
+    while True:
+        tupla=ejecutarPaso(apuntador, vectorMemoria, diccEtiquetas, posVariablesMem, omitirLineasGlobal)
+        if len(tupla)>1:
+            apuntador, valido, fin=tupla
+        else: break
+
+        if fin or apuntador>=len(vectorMemoria):
+            break
 
 def revisarValorInicial(cadena, tipo):
 
@@ -264,6 +428,10 @@ def busquedaVariables(lineasCodigo, omitirLineas, posRetorne):
                     print(f"El nombre de variable {nombreVariable} es inválido porque es una palabra reservada.")
                     validez=False
                     break
+                elif len(nombreVariable)>255:                                                                           #Se detecta si el nombre de una variable tiene más de 255 caracteres
+                    print(f"El nombre de variable {nombreVariable} excede la longitud máxima.")
+                    validez=False
+                    break
                 elif tipo not in tiposDeDatos:                                                                          #Se detecta si el tipo declarado de una variable no existe en el lenguaje CH
                     print(f"El tipo de dato {tipo} no esta soportado en el sistema.")
                     validez=False
@@ -277,6 +445,8 @@ def busquedaVariables(lineasCodigo, omitirLineas, posRetorne):
                         valorInicial=None
                     else:
                         valorInicial=renglon[3]
+                        if tipo=="I" or tipo=="L": valorInicial=int(valorInicial)
+                        elif tipo=="R": valorInicial=float(valorInicial)
                     diccVariables.update({nombreVariable:[i, tipo, valorInicial]})                                                                #En caso de que la sintaxis este correcta, se almacena el nombre de la variable y la línea de código en que se declaró
 
     return validez, diccVariables
@@ -375,15 +545,17 @@ def chequeoSintaxis(ruta):
     print("Quinto paso válido\n")
 
     celdasMemNecesarias=posRetorne+len(diccEtiquetas)+len(diccVariables.keys())
-    return True, celdasMemNecesarias, posRetorne, diccEtiquetas, diccVariables
+    return True, celdasMemNecesarias, posRetorne, diccEtiquetas, diccVariables, omitirLineas
 
-def cargarPrograma(ruta, posDispMem, vectorMemoria):
+def cargarPrograma(ruta, posDispMem, vectorMemoria, omitirLineasGlobal):
 
     tupla=chequeoSintaxis(ruta)
     if len(tupla)>1:
-        sintaxisValida, celdasMemNecesarias, posRetorne, diccEtiquetas, diccVariables=tupla
+        sintaxisValida, celdasMemNecesarias, posRetorne, diccEtiquetas, diccVariables, omitirLineas=tupla
     else:
         sintaxisValida=tupla
+
+    omitirLineasGlobal=omitirLineasGlobal+[num+posDispMem for num in omitirLineas]
 
     if not sintaxisValida: 
         print("La sintaxis del programa tiene errores.")
@@ -395,7 +567,7 @@ def cargarPrograma(ruta, posDispMem, vectorMemoria):
     for i in range(len(lineasCodigo)):                      #En este caso, solo se quitan los saltos de línea de cada renglon leído
         lineasCodigo[i]=lineasCodigo[i].rstrip()
     
-    if (len(vectorMemoria)-(posDispMem+1))<celdasMemNecesarias:
+    if (len(vectorMemoria)-(posDispMem))<celdasMemNecesarias:
         print("No hay suficiente espacio en memoria.")
         return False
 
@@ -404,7 +576,6 @@ def cargarPrograma(ruta, posDispMem, vectorMemoria):
     
     for key in diccEtiquetas.keys():            #Se ubican correctamente las direcciones las que apuntan las etiquetas
         diccEtiquetas[key]=diccEtiquetas[key]+posDispMem 
-        print(f"La etiqueta {key} apunta a la dirección de memoria {diccEtiquetas[key]}")
 
     posDispMem=posDispMem+posRetorne+1          #Nueva ubicación de las posiciones de memoria disponibles
 
@@ -417,23 +588,49 @@ def cargarPrograma(ruta, posDispMem, vectorMemoria):
         variableMemoria=Variable(nombreVariable, tipo, valorInicial)
         listaVariables.append(variableMemoria)
 
-    print("")
     posVariablesMem={}                          #Se almacena el nombre de las variables usadas por el programa y su dirección de memoria
     for i in range(len(listaVariables)):
         nombreVariable=listaVariables[i].getNombre()
         vectorMemoria[i+posDispMem]=listaVariables[i]
         posVariablesMem.update({nombreVariable:i+posDispMem})
-        print(f"La variable {nombreVariable} será almacenada en la posición de memoria {i+posDispMem}")
+        omitirLineasGlobal.append(i+posDispMem)
 
-    print("")
-    print(f"Luego de cargar el programa y las variables en memoria, se obtiene lo siguiente en el vector memoria:\n{vectorMemoria}")
+    posDispMem=posDispMem+len(listaVariables)         #Nueva ubicación de las posiciones de memoria disponibles
+
     guardarEtiquetasTXT(diccEtiquetas)
     guardarVariablesTXT(vectorMemoria, posVariablesMem)
     guardarMemoriaTXT(vectorMemoria)
+    
+    return True, vectorMemoria, diccEtiquetas, posVariablesMem, posDispMem, omitirLineasGlobal
 
 #main
+omitirLineasGlobal=[]
 vectorMemoria, posDispMem=inicializarMemoria(z, posAcum)
+apuntador=posDispMem   #Esta variable apunta a la próxima instrucción a ser ejecutada
 print("***"*5+"INICIO PROGRAMA"+"***"*5+"\n")
 print(f"Inicialización memoria: {vectorMemoria}")
 print(f"\nLuego de separar espacio para el acumulador y el kernel, hay espacio dispinible desde la posición {posDispMem}.\n")
-cargarPrograma('programas/factorial.ch', posDispMem, vectorMemoria)
+tupla=cargarPrograma('programas/factorial.ch', posDispMem, vectorMemoria, omitirLineasGlobal)
+if len(tupla)>1:
+    valido, vectorMemoria, diccEtiquetas, posVariablesMem, posDispMem, omitirLineasGlobal=tupla
+else:
+    valido=False
+
+print(diccEtiquetas)
+print(posVariablesMem)
+
+if not valido:
+    print("El programa no puede ejecutarse")
+    exit()
+
+ejecutarTodo(apuntador, vectorMemoria, diccEtiquetas, posVariablesMem, omitirLineasGlobal)
+
+"""while True:
+        input("Presione enter para ejecutar la siguiente instrucción...")
+        tupla=ejecutarPaso(apuntador, vectorMemoria, diccEtiquetas, posVariablesMem, omitirLineasGlobal)
+        if len(tupla)>1:
+            apuntador, valido, fin=tupla
+        else: break
+
+        if fin or apuntador>=len(vectorMemoria):
+            break"""
