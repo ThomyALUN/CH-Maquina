@@ -1,8 +1,8 @@
 from clases import *
 from math import log10, ceil
+from interfaz import *
 
-z=1                                                                                 #Último dígito del documento
-posAcum=0                                                                           #Por defecto, el acumulador irá en la posición 0
+finDocumento=1                                                                                 #Último dígito del documento                                                                         #Por defecto, el acumulador irá en la posición 0
 palabrasReservadasCH=['acumulador']                                                 #Palabras reservadas en el lenguaje CH 
 
 #Se exporta todo lo que hay en la memoria en un archivo .txt
@@ -24,22 +24,22 @@ def guardarMemoriaTXT(vectorMemoria):
     archivo.close()
 
 #Se exporta la ubicación y el valor de las variables en un archivo .txt
-def guardarVariablesTXT(vectorMemoria, posVariablesMem):
+def guardarVariablesTXT(vectorMemoria, posVariablesMem, programaActual):
     archivo=open("variables.txt","w")
     cadena="Pos \tVariables\tValores\n"
     archivo.write(cadena)
     for variable, pos in posVariablesMem.items():
-        cadena=f"{agregarCeros(pos,4)}\t{variable}\t{vectorMemoria[pos].getValor()}\n"
+        cadena=f"{agregarCeros(pos,4)}\t{agregarCeros(programaActual,4)}{variable}\t{vectorMemoria[pos].getValor()}\n"
         archivo.write(cadena)
     archivo.close()
 
 #Se exporta la dirección de apuntado y nombre de las etiquetas
-def guardarEtiquetasTXT(diccEtiquetas):
+def guardarEtiquetasTXT(diccEtiquetas, programaActual):
     archivo=open("etiquetas.txt","w")
     cadena="Pos \tEtiquetas\n"
     archivo.write(cadena)
     for etiqueta, pos in diccEtiquetas.items():
-        cadena=f"{agregarCeros(pos,4)}\t{etiqueta}\n"
+        cadena=f"{agregarCeros(pos,4)}\t{agregarCeros(programaActual,4)}{etiqueta}\n"
         archivo.write(cadena)
     archivo.close()
 
@@ -81,7 +81,8 @@ def potencia10(num):
             potencia=True
     return potencia
 
-def ejecutarPaso(apuntador, vectorMemoria, diccEtiquetas, posVariablesMem, omitirLineasGlobal):
+#Función incompleta
+def ejecutarPaso(apuntador, vectorMemoria, diccEtiquetas, posVariablesMem, omitirLineasGlobal, programaActual):
     valido=True                             #Se asume que el funcionamiento es correcto
     fin=False                               #Se asume que la línea no es de retorno
     linea=vectorMemoria[apuntador]
@@ -217,15 +218,18 @@ def ejecutarPaso(apuntador, vectorMemoria, diccEtiquetas, posVariablesMem, omiti
         return valido
 
     print(vectorMemoria[0].getValor(), vectorMemoria[0].getTipo())
-    guardarMemoriaTXT(vectorMemoria)
-    guardarVariablesTXT(vectorMemoria, posVariablesMem)
+    guardarVariablesTXT(vectorMemoria, posVariablesMem, programaActual)
 
     apuntador=proxDirecc
     return apuntador, valido, fin
 
-def ejecutarTodo(apuntador, vectorMemoria, diccEtiquetas, posVariablesMem, omitirLineasGlobal):
+#Función incompleta
+def ejecutarTodo(apuntador, vectorMemoria, listaProgramas, programaActual, omitirLineasGlobal):
+    infoPrograma=listaProgramas[programaActual]
+    diccEtiquetas=infoPrograma[2]
+    posVariablesMem=infoPrograma[1]
     while True:
-        tupla=ejecutarPaso(apuntador, vectorMemoria, diccEtiquetas, posVariablesMem, omitirLineasGlobal)
+        tupla=ejecutarPaso(apuntador, vectorMemoria, diccEtiquetas, posVariablesMem, omitirLineasGlobal, programaActual)
         if len(tupla)>1:
             apuntador, valido, fin=tupla
         else: break
@@ -268,12 +272,12 @@ def revisarValorInicial(cadena, tipo):
 
     return validez
 
-def inicializarMemoria(z, posAcum):
-    sizeKernel=z*10+9
-    sizeMemoria=z*10+50
+def inicializarMemoria(finDocumento):
+    sizeKernel=finDocumento*10+9
+    sizeMemoria=finDocumento*10+50
     vectorMemoria=[None for i in range(sizeMemoria)]    #Por convención, el tipo de dato None representará espacios de memoria vacíos
 
-    vectorMemoria[posAcum]=Acumulador()                 #El acumulador toma un valor arbitrario para diferenciarlo del resto de espacios de memoria
+    vectorMemoria[0]=Acumulador()                       #El acumulador toma un valor arbitrario para diferenciarlo del resto de espacios de memoria
 
     #Se llenan los siguientes espacios de memoria con el kernel
     kernelVacio=Kernel()
@@ -547,19 +551,17 @@ def chequeoSintaxis(ruta):
     celdasMemNecesarias=posRetorne+len(diccEtiquetas)+len(diccVariables.keys())
     return True, celdasMemNecesarias, posRetorne, diccEtiquetas, diccVariables, omitirLineas
 
-def cargarPrograma(ruta, posDispMem, vectorMemoria, omitirLineasGlobal):
+def cargarPrograma(ruta, posDispMem, vectorMemoria, omitirLineasGlobal, listaProgramas):
 
     tupla=chequeoSintaxis(ruta)
-    if len(tupla)>1:
-        sintaxisValida, celdasMemNecesarias, posRetorne, diccEtiquetas, diccVariables, omitirLineas=tupla
-    else:
-        sintaxisValida=tupla
 
-    omitirLineasGlobal=omitirLineasGlobal+[num+posDispMem for num in omitirLineas]
-
-    if not sintaxisValida: 
+    if tupla==False: 
         print("La sintaxis del programa tiene errores.")
         return False
+
+    __, celdasMemNecesarias, posRetorne, diccEtiquetas, diccVariables, omitirLineas=tupla
+
+    omitirLineasGlobal=omitirLineasGlobal+[num+posDispMem for num in omitirLineas]
 
     with open(ruta,'r') as archivo:                         #Se vuelve a leer el archivo línea por línea
         lineasCodigo=archivo.readlines()
@@ -571,6 +573,7 @@ def cargarPrograma(ruta, posDispMem, vectorMemoria, omitirLineasGlobal):
         print("No hay suficiente espacio en memoria.")
         return False
 
+    limitesPrograma=[posDispMem, posDispMem+posRetorne] 
     for i in range(posRetorne+1):               #Se cargan en memoria las líneas de código halladas antes del retorne
         vectorMemoria[i+posDispMem]=lineasCodigo[i]
     
@@ -597,40 +600,44 @@ def cargarPrograma(ruta, posDispMem, vectorMemoria, omitirLineasGlobal):
 
     posDispMem=posDispMem+len(listaVariables)         #Nueva ubicación de las posiciones de memoria disponibles
 
-    guardarEtiquetasTXT(diccEtiquetas)
-    guardarVariablesTXT(vectorMemoria, posVariablesMem)
+    infoPrograma=[limitesPrograma, posVariablesMem, diccEtiquetas]
+    listaProgramas.append(infoPrograma)
+    programaTemp=len(listaProgramas)-1
+
+    guardarEtiquetasTXT(diccEtiquetas, programaTemp)
+    guardarVariablesTXT(vectorMemoria, posVariablesMem, programaTemp)
     guardarMemoriaTXT(vectorMemoria)
     
-    return True, vectorMemoria, diccEtiquetas, posVariablesMem, posDispMem, omitirLineasGlobal
+    return True, vectorMemoria, posDispMem, omitirLineasGlobal, listaProgramas
 
 #main
-omitirLineasGlobal=[]
-vectorMemoria, posDispMem=inicializarMemoria(z, posAcum)
-apuntador=posDispMem   #Esta variable apunta a la próxima instrucción a ser ejecutada
-print("***"*5+"INICIO PROGRAMA"+"***"*5+"\n")
-print(f"Inicialización memoria: {vectorMemoria}")
-print(f"\nLuego de separar espacio para el acumulador y el kernel, hay espacio dispinible desde la posición {posDispMem}.\n")
-tupla=cargarPrograma('programas/factorial.ch', posDispMem, vectorMemoria, omitirLineasGlobal)
-if len(tupla)>1:
-    valido, vectorMemoria, diccEtiquetas, posVariablesMem, posDispMem, omitirLineasGlobal=tupla
-else:
-    valido=False
+if __name__=="__main__":
+    omitirLineasGlobal=[]
+    listaProgramas=[]
+    vectorMemoria, posDispMem=inicializarMemoria(finDocumento)
+    apuntador=posDispMem   #Esta variable apunta a la próxima instrucción a ser ejecutada
+    print("***"*5+"INICIO PROGRAMA"+"***"*5+"\n")
+    print(f"Inicialización memoria: {vectorMemoria}")
+    print(f"\nLuego de separar espacio para el acumulador y el kernel, hay espacio dispinible desde la posición {posDispMem}.\n")
+    tupla=cargarPrograma('programas/factorial.ch', posDispMem, vectorMemoria, omitirLineasGlobal, listaProgramas)
 
-print(diccEtiquetas)
-print(posVariablesMem)
+    if tupla==False:
+        print("El programa no puede ejecutarse")
+        exit()
 
-if not valido:
-    print("El programa no puede ejecutarse")
-    exit()
+    valido, vectorMemoria, posDispMem, omitirLineasGlobal, listaProgramas=tupla
 
-ejecutarTodo(apuntador, vectorMemoria, diccEtiquetas, posVariablesMem, omitirLineasGlobal)
+    print(listaProgramas)
 
-"""while True:
-        input("Presione enter para ejecutar la siguiente instrucción...")
-        tupla=ejecutarPaso(apuntador, vectorMemoria, diccEtiquetas, posVariablesMem, omitirLineasGlobal)
-        if len(tupla)>1:
-            apuntador, valido, fin=tupla
-        else: break
+    programaActual=0
+    ejecutarTodo(apuntador, vectorMemoria, listaProgramas, programaActual, omitirLineasGlobal)
 
-        if fin or apuntador>=len(vectorMemoria):
-            break"""
+    """while True:
+            input("Presione enter para ejecutar la siguiente instrucción...")
+            tupla=ejecutarPaso(apuntador, vectorMemoria, diccEtiquetas, posVariablesMem, omitirLineasGlobal)
+            if len(tupla)>1:
+                apuntador, valido, fin=tupla
+            else: break
+
+            if fin or apuntador>=len(vectorMemoria):
+                break"""
