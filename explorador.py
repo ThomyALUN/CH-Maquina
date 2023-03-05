@@ -9,11 +9,6 @@ from kivy.graphics import Color, Rectangle
 from kivy.lang import Builder
 import os
 
-# Seleccionar el archivo de estilo .kv
-
-Builder.load_file("chmaquina.kv")
-
-
 class VentanaExplorador(GridLayout):
     def __init__(self, appPrincipal, appExplorador, cancelar,**kwargs):
         self.rows=3

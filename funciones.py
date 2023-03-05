@@ -1,6 +1,5 @@
 from clases import *
 from math import log10, ceil
-from interfaz import *
 
 finDocumento=1                                                                                 #Último dígito del documento                                                                         #Por defecto, el acumulador irá en la posición 0
 palabrasReservadasCH=['acumulador']                                                 #Palabras reservadas en el lenguaje CH 
@@ -71,6 +70,11 @@ def agregarCeros(pos, ceros):
         numFormateado+="0"
     numFormateado+=str(pos)
     return numFormateado
+
+#Se elimina una subcadena de una cadena
+def eliminarSubcadena(cadena, subcadena):
+    cadena=cadena.replace(subcadena,"")
+    return cadena
 
 #Se calcula si un número es potencia de 10
 def potencia10(num):
@@ -274,7 +278,7 @@ def revisarValorInicial(cadena, tipo):
 
 def inicializarMemoria(finDocumento):
     sizeKernel=finDocumento*10+9
-    sizeMemoria=finDocumento*10+50
+    sizeMemoria=finDocumento*10+100
     vectorMemoria=[None for i in range(sizeMemoria)]    #Por convención, el tipo de dato None representará espacios de memoria vacíos
 
     vectorMemoria[0]=Acumulador()                       #El acumulador toma un valor arbitrario para diferenciarlo del resto de espacios de memoria
