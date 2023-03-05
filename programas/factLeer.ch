@@ -1,7 +1,6 @@
 nueva unidad I 1
-//Este programa calcula el factorial de un número
 nueva m I 5
-
+lea m
 nueva respuesta I 1
 nueva intermedia I 0
 cargue m
@@ -14,8 +13,8 @@ almacene respuesta
 cargue intermedia
 reste unidad
 vayasi itere fin
-etiqueta itere 8
-etiqueta fin 19
+etiqueta itere 9
+etiqueta fin 20
 muestre respuesta
 imprima respuesta
 retorne 0

@@ -236,10 +236,11 @@ class ScrollEtiquetas(ScrollView):
 
 class SeccionResultados(GridLayout):
 
-    def __init__(self, **kwargs):
+    def __init__(self, app, **kwargs):
         super(SeccionResultados, self).__init__(**kwargs)
         self.rows=2
         resultados=GridLayout(rows=2)
+        self.app=app
 
         pantalla=GridLayout(rows=2, size_hint_y=0.5)
         etiqueta1=Label(text="[b]PANTALLA[/b]",size_hint_y=0.2, markup=True)

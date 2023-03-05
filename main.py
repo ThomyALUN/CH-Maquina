@@ -1,4 +1,5 @@
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
@@ -6,8 +7,11 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.core.window import Window
 
+from math import log
+
 from explorador import *
 from secciones import *
+from leerValor import *
 
 class VentanaPrincipal(GridLayout):
 
@@ -23,6 +27,8 @@ class VentanaPrincipal(GridLayout):
 
         self.finDocumento=1
         self.appExplorador=None
+        self.valorLeido=None
+        self.variableLeida=True
         self.listaProgramas=[]
         self.omitirLineasGlobal=[]
         self.vectorMemoria, self.posDispMem = func.inicializarMemoria(self.finDocumento)
@@ -53,7 +59,7 @@ class VentanaPrincipal(GridLayout):
         segundaColumna.add_widget(self.seccionVariables)
         segundaColumna.add_widget(self.seccionEtiquetas)
 
-        self.seccionResultados=SeccionResultados()
+        self.seccionResultados=SeccionResultados(self)
         terceraColumna=self.seccionResultados
 
         self.seccionMemoria=SeccionMemoria(self)
@@ -84,13 +90,13 @@ class VentanaPrincipal(GridLayout):
         self.add_widget(footer)
 
     def abrirExplorador(self, obj):
-        self.appExplorador=ExploradorApp(self, self.cerrar_popup)
+        self.appExplorador=ExploradorApp(self, self.cerrar_Explorador)
         contenido=self.appExplorador.build()
         self._popup = Popup(title="Cargar archivo", content=contenido,
                             size_hint=(0.9, 0.9))
         self._popup.open()
 
-    def cerrar_popup(self, obj):
+    def cerrar_Explorador(self, obj):
         try:
             self.ruta=self.appExplorador.rutaCompleta
             self.textoRuta.text=self.ruta
@@ -99,11 +105,23 @@ class VentanaPrincipal(GridLayout):
             self.textoRuta.text=""
         self._popup.dismiss()
 
-    def mostrarArchivo(self, obj):
+    def abrirLectura(self):
+        self.appLectura=LecturaValorApp(self, self.cerrar_Lectura, self.tipoVarLeida)
+        contenido=self.appLectura.build()
+        self._popup = Popup(title="Leer dato", content=contenido,
+                            size_hint=(0.4, 0.4))
+        self._popup.open()
+
+    def cerrar_Lectura(self, obj):
         try:
-            print(self.ruta)
+            self.valorLeido=self.appLectura.ventana.valorLeido
+            self.variableLeida=True
         except:
-            pass
+            self.valorLeido=None
+        else:
+            self.objetoVarLeida.setValor(self.valorLeido)
+            self.vectorMemoria[self.posVarLeida]=self.objetoVarLeida
+        self._popup.dismiss()
 
     def cargarArchivo(self, obj):
         try:
@@ -111,35 +129,38 @@ class VentanaPrincipal(GridLayout):
         except:
             pass
         else:
-            tupla=func.cargarPrograma(self.ruta, self.posDispMem, self.vectorMemoria, self.omitirLineasGlobal, self.listaProgramas)
-            if tupla==False:
-                pass
-            else:
-                __, self.vectorMemoria, self.posDispMem, self.omitirLineasGlobal, self.listaProgramas=tupla
-
-            self.programaActual=len(self.listaProgramas)-1
-            print(self.listaProgramas)
-
             try:
-                self.apuntador=self.listaProgramas[self.programaActual][0][0]
-            except IndexError:
-                print("El archivo no es válido")
-            else:
-                self.programaValido=None
-                self.finPrograma=None
-                self.seccionInstrucciones.resetSeccion()
+                tupla=func.cargarPrograma(self.ruta, self.posDispMem, self.vectorMemoria, self.omitirLineasGlobal, self.listaProgramas)
+                if tupla==False:
+                    pass
+                else:
+                    __, self.vectorMemoria, self.posDispMem, self.omitirLineasGlobal, self.listaProgramas=tupla
 
-                self.seccionVariables.clear_widgets()
-                self.seccionVariables.__init__(self)
+                self.programaActual=len(self.listaProgramas)-1
+                print(self.listaProgramas)
 
-                self.seccionEtiquetas.clear_widgets()
-                self.seccionEtiquetas.__init__(self)
+                try:
+                    self.apuntador=self.listaProgramas[self.programaActual][0][0]
+                except IndexError:
+                    print("El archivo no es válido")
+                else:
+                    self.programaValido=None
+                    self.finPrograma=None
+                    self.seccionInstrucciones.resetSeccion()
 
-                self.seccionResultados.textoPantalla.text=""
-                self.seccionResultados.textoImpreso.text=""
+                    self.seccionVariables.clear_widgets()
+                    self.seccionVariables.__init__(self)
 
-                self.seccionMemoria.clear_widgets()
-                self.seccionMemoria.__init__(self)
+                    self.seccionEtiquetas.clear_widgets()
+                    self.seccionEtiquetas.__init__(self)
+
+                    self.seccionResultados.textoPantalla.text=""
+                    self.seccionResultados.textoImpreso.text=""
+
+                    self.seccionMemoria.clear_widgets()
+                    self.seccionMemoria.__init__(self)
+            except TypeError:
+                print("No se seleccionó ningún archivo")
 
     def ejecutarPaso(self, obj):
         #Función incompleta
@@ -147,7 +168,10 @@ class VentanaPrincipal(GridLayout):
             print("Error")
             return None
         elif self.programaValido==False or self.finPrograma==True:
-            print("no se puede hacer más")
+            print("No se puede hacer más")
+            return None
+        elif self.variableLeida==False:
+            print("Aún no se ha leído la variable")
             return None
 
         valido=True                             #Se asume que el funcionamiento es correcto
@@ -396,6 +420,41 @@ class VentanaPrincipal(GridLayout):
                                 valorVar2=1
                             objetoVar2.setValor(valorVar2)
                             self.vectorMemoria[posVar2]=objetoVar2
+                elif comando=="lea":
+                    variable1=linea[1]
+                    self.posVarLeida=posVariablesMem[variable1]
+                    self.objetoVarLeida=self.vectorMemoria[self.posVarLeida]
+                    self.tipoVarLeida=self.objetoVarLeida.getTipo()
+                    self.variableLeida=False
+                    self.abrirLectura()
+                elif comando=="logaritmo":
+                    variable1=linea[1]
+                    posVar1=posVariablesMem[variable1]
+                    objetoVar1=self.vectorMemoria[posVar1]
+                    tipoVar1=objetoVar1.getTipo()
+                    if tipoVar=="C" or tipoVar=="L":
+                        print("Tipo de dato inválido en la variable")
+                        valido=False
+                    else:
+                        base=objetoVar1.getValor()
+                        if base<=1:
+                            print("La base del loagritmo es inválida")
+                            valido=False
+                        else:
+                            objetoAcum=self.vectorMemoria[0]    #Se accede al acumulador
+                            tipoAcum=objetoAcum.getTipo() 
+                            if tipoAcum=="C" or tipoAcum=="L":
+                                print("Tipo de dato inválido en el acumulador")
+                                valido=False
+                            else:
+                                potencia=objetoAcum.getValor()
+                                if potencia<1:
+                                    print("La potencia del loagritmo es inválida")
+                                    valido=False
+                                else:
+                                    logaritmo=log(potencia, base)
+                                    objetoAcum.setValor(logaritmo)
+                                    self.vectorMemoria[0]=objetoAcum
             else:   #Se detectan los comentarios o líneas en blanco
                 print(f"{self.apuntador}: Linea omitida",end="")
 
@@ -408,19 +467,22 @@ class VentanaPrincipal(GridLayout):
             self.seccionMemoria.scroll.actualizarDatosMem()
 
     def ejecutarPrograma(self, obj):
-        if len(self.listaProgramas)==0:
+        if len(self.listaProgramas)==0 or self.variableLeida==False:
             print("Error")
             return None
         while True:
             self.ejecutarPaso(obj)
-            if self.programaValido==False or self.finPrograma==True:
+            if self.programaValido==False or self.finPrograma==True or self.variableLeida==False:
                 break
+
+
 
 
 class CHMaquinaApp(App):
 
     def build(self):
         Window.clearcolor=(26/255, 28/255, 82/255, 0.8)
+        Window.size=(900,650)
         return VentanaPrincipal()
 
 if __name__ == '__main__':
