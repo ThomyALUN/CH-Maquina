@@ -11,7 +11,7 @@ from math import log
 
 from explorador import *
 from secciones import *
-from leerValor import *
+from lecturaValor import *
 
 class VentanaPrincipal(GridLayout):
 
