@@ -1,12 +1,9 @@
 from kivy.app import App
 from kivy.uix.label import Label
-from kivy.uix.popup import Popup
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
-from kivy.core.window import Window
 from kivy.uix.filechooser import FileChooserListView
 from kivy.graphics import Color, Rectangle
-from kivy.lang import Builder
 import os
 
 class VentanaExplorador(GridLayout):

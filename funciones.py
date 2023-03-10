@@ -35,12 +35,14 @@ def potencia10(num):
             potencia=True
     return potencia
 
+#Se revisa si el valor inicial asignado a una variable es válido o no
 def revisarValorInicial(cadena, tipo):
 
     #Se asume que esta función solo se utiliza cuando se compruebe que el tipo de dato pasado como parámetro es válido dentro del lenguaje CH
 
     valor=None
     validez=True
+    mensaje=None
 
     if tipo=="C":
         valor=cadena
@@ -48,13 +50,13 @@ def revisarValorInicial(cadena, tipo):
         try:
             valor=int(cadena)
         except:
-            print(f"El valor {cadena} es inválido para el tipo entero.")
+            mensaje=f"El valor {cadena} es inválido para el tipo entero."
             validez=False
     elif tipo=="R":
         try:
             valor=float(cadena)
         except:
-            print(f"El valor {cadena} es inválido para el tipo real.")
+            mensaje=f"El valor {cadena} es inválido para el tipo real."
             validez=False
     else:
         try:
@@ -62,17 +64,15 @@ def revisarValorInicial(cadena, tipo):
             if valor==0 or valor==1:
                 pass
             else:
-                print(f"El valor {cadena} es inválido para el tipo booleano.")
+                mensaje=f"El valor {cadena} es inválido para el tipo booleano."
                 validez=False
         except:
-            print(f"El valor {cadena} es inválido para el tipo booleano.")
+            mensaje=f"El valor {cadena} es inválido para el tipo booleano."
             validez=False
 
-    return validez
+    return validez, mensaje
 
-def inicializarMemoria(finDocumento):
-    sizeKernel=finDocumento*10+9
-    sizeMemoria=finDocumento*10+100
+def inicializarMemoria(sizeKernel, sizeMemoria):
     vectorMemoria=[None for i in range(sizeMemoria)]    #Por convención, el tipo de dato None representará espacios de memoria vacíos
 
     vectorMemoria[0]=Acumulador()                       #El acumulador toma un valor arbitrario para diferenciarlo del resto de espacios de memoria

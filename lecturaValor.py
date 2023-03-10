@@ -1,10 +1,13 @@
 from kivy.app import App
 from kivy.uix.label import Label
+from kivy.uix.popup import Popup
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.textinput import TextInput
 from kivy.graphics import Color, Rectangle
 from kivy.core.window import Window
+
+from mensajeError import *
 
 class VentanaLectura(GridLayout):
     def __init__(self, appPrincipal, appLector, cancelar, tipoVar, **kwargs):
@@ -52,14 +55,25 @@ class VentanaLectura(GridLayout):
                     self.valorLeido=None
             else:
                 self.valorLeido=None
-        except AttributeError:
-            pass
+        except AttributeError as error:
+            self.abrirError(f"Error en la lectura: {error}")
         else:
             if self.valorLeido!=None:
                 print(f"Leído con éxito: {self.valorLeido}")
                 self.cancelar(None)
             else:
-                print("Error en la lectura")
+                self.abrirError("Error en la lectura")
+
+
+    def abrirError(self, mensaje):
+        self.appError=MensajeErrorApp(self, self.cerrar_Error, mensaje)
+        contenido=self.appError.build()
+        self._popup = Popup(title="Error", content=contenido,
+                            size_hint=(0.4, 0.4))
+        self._popup.open()
+
+    def cerrar_Error(self, obj):
+        self._popup.dismiss()
 
 
 class LecturaValorApp(App):
