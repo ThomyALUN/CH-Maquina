@@ -19,7 +19,7 @@ class VentanaError(GridLayout):
         self.titulo=Label(text="[b]Error[/b]", markup=True, size_hint_y=0.25, height=100, font_size="35sp")
         self.add_widget(self.titulo)
         
-        self.textoError=Label(text=mensaje, size_hint_y=0.4, padding=[12,12])
+        self.textoError=Label(text=mensaje, size_hint_y=0.4, padding=[12,12], text_size=(300, None))
         self.add_widget(self.textoError)
         
         botones=GridLayout(cols=2, spacing=20, height=30, size_hint_y=0.2, padding=[10,12])

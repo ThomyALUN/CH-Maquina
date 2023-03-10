@@ -100,12 +100,12 @@ class VentanaPrincipal(GridLayout):
         caja.add_widget(botonExplorador)
 
         # Acá se define la zona de muestra
-        zonaMuestra=GridLayout(cols=5, size_hint_y=0.6)
+        zonaMuestra=GridLayout(cols=4, size_hint_y=0.6,spacing=10)
 
         self.seccionInstrucciones=SeccionInstrucciones(self)
         primeraColumna=self.seccionInstrucciones
 
-        segundaColumna=BoxLayout(orientation="vertical")
+        segundaColumna=BoxLayout(orientation="vertical", spacing=10)
         self.seccionVariables=SeccionVariables(self)
         self.seccionEtiquetas=SeccionEtiquetas(self)
         segundaColumna.add_widget(self.seccionVariables)
@@ -175,6 +175,7 @@ class VentanaPrincipal(GridLayout):
         else:
             self.objetoVarLeida.setValor(self.valorLeido)
             self.vectorMemoria[self.posVarLeida]=self.objetoVarLeida
+            self.seccionResultados.textoPantalla.text=str(self.valorLeido)
         self._popup.dismiss()
 
 
@@ -188,16 +189,21 @@ class VentanaPrincipal(GridLayout):
     def cerrar_Error(self, obj):
         self._popup.dismiss()
 
+
     def cargarArchivo(self, obj):
         try:
             print(self.ruta)
         except:
-            pass
+            self.abrirError("No se ha seleccionado ningún archivo")
         else:
             try:
+                if self.ruta[-3:]!=".ch":
+                    self.abrirError("El formato del archivo es inválido")
+                    return None
                 tupla=func.cargarPrograma(self.ruta, self.posDispMem, self.vectorMemoria, self.omitirLineasGlobal, self.listaProgramas)
-                if tupla==False:
-                    pass
+                if tupla[0]==False:
+                    self.abrirError(tupla[1])
+                    return None
                 else:
                     __, self.vectorMemoria, self.posDispMem, self.omitirLineasGlobal, self.listaProgramas=tupla
 
@@ -207,36 +213,32 @@ class VentanaPrincipal(GridLayout):
                 try:
                     self.apuntador=self.listaProgramas[self.programaActual][0][0]
                 except IndexError:
-                    print("El archivo no es válido")
+                    self.abrirError("El archivo no es válido")
                 else:
                     self.programaValido=None
                     self.finPrograma=None
                     self.seccionInstrucciones.resetSeccion()
 
-                    self.seccionVariables.clear_widgets()
-                    self.seccionVariables.__init__(self)
+                    self.seccionVariables.resetSeccion()
 
-                    self.seccionEtiquetas.clear_widgets()
-                    self.seccionEtiquetas.__init__(self)
+                    self.seccionEtiquetas.resetSeccion()
 
-                    self.seccionResultados.textoPantalla.text=""
-                    self.seccionResultados.textoImpreso.text=""
+                    self.seccionResultados.textoPantalla.text=". . ."
+                    self.seccionResultados.textoImpreso.text=". . ."
 
-                    self.seccionMemoria.clear_widgets()
-                    self.seccionMemoria.__init__(self)
+                    self.seccionMemoria.scroll.actualizarDatosMem()
             except TypeError:
-                print("No se seleccionó ningún archivo")
+                self.abrirError("El archivo no es válido.")
 
     def ejecutarPaso(self, obj):
-        #Función incompleta
         if len(self.listaProgramas)==0:
-            print("Error")
+            self.abrirError("No hay programas cargados en memoria")
             return None
         elif self.programaValido==False or self.finPrograma==True:
-            print("No se puede hacer más")
+            self.abrirError("No se puede hacer más")
             return None
         elif self.variableLeida==False:
-            print("Aún no se ha leído la variable")
+            self.abrirError("Aún no se ha leído la variable")
             return None
 
         valido=True                             #Se asume que el funcionamiento es correcto
@@ -244,7 +246,7 @@ class VentanaPrincipal(GridLayout):
         try:
             programaActual=self.programaActual
         except AttributeError:
-            print("Error")
+            self.abrirError("No se ha seleccionado ningún programa")
         else:
             posVariablesMem=self.listaProgramas[programaActual][1]
             diccEtiquetas=self.listaProgramas[programaActual][2]
@@ -255,9 +257,8 @@ class VentanaPrincipal(GridLayout):
             if self.apuntador not in self.omitirLineasGlobal and tipoDato!=func.Variable and linea!=None:
                 linea=linea.split()
                 comando=linea[0]
-                print(f"{self.apuntador}:{linea}",end="")
                 if comando=="nueva" or comando=="etiqueta":
-                    print(f" :Línea ignorada", end="")
+                    pass
                 elif comando=="cargue":
                     #Se traen los datos de la variable a cargar al acumulador
                     variable=linea[1]
@@ -271,8 +272,6 @@ class VentanaPrincipal(GridLayout):
                     objetoAcum.setTipo(tipo)
                     objetoAcum.setValor(valor)
                     self.vectorMemoria[0]=objetoAcum
-                    
-                    #print(f": Variable a cargar {variable}:{posVar}:{vectorMemoria[posVar]}:Valor={valor}:Tipo={tipo}")
                 elif comando=="almacene":
                     #Se cargan los datos de la variable a sobreescribir
                     variable=linea[1]
@@ -293,7 +292,7 @@ class VentanaPrincipal(GridLayout):
                         objetoVar.setValor(int(valorAcum))
                         self.vectorMemoria[posVar]=objetoVar
                     else:
-                        print(f"\nTipo de dato inválido {tipoVar} y {tipoAcum} no son equivalentes.")
+                        self.abrirError(f"Tipo de dato inválido {tipoVar} y {tipoAcum} no son equivalentes.")
                         valido=False          
                 elif comando in aritmeticos:
                     variable=linea[1]                       #Recupera el nombre de la variable pasada como parámetro
@@ -301,14 +300,14 @@ class VentanaPrincipal(GridLayout):
                     objetoVar=self.vectorMemoria[posVar]    #Se recupera lo que hay en dicha posición de memoria
                     tipoVar=objetoVar.getTipo()             #Se pide el tipo de dato que alberga la variable
                     if tipoVar!="I" and tipoVar!="R":
-                        print(f"La variable {variable} no tiene el tipo de dato entero o real, por lo tanto no se puede realizar la operación.")
+                        self.abrirError(f"La variable {variable} no tiene el tipo de dato entero o real, por lo tanto no se puede realizar la operación.")
                         valido=False
                     else:
                         valorVar=objetoVar.getValor()       #Se pide el valor de la variable recuperada
                         objetoAcum=self.vectorMemoria[0]    #Se accede al acumulador
                         tipoAcum=objetoAcum.getTipo()       #Se pide el tipo de dato que alberga el acumulador
                         if tipoAcum!="I" and tipoAcum!="R":
-                            print(f"El acumulador no tiene el tipo de dato entero o real, por lo tanto no se puede realizar la operación.")
+                            self.abrirError(f"El acumulador no tiene el tipo de dato entero o real, por lo tanto no se puede realizar la operación.")
                             valido=False
                         else:
                             valorAcum=objetoAcum.getValor()
@@ -320,7 +319,7 @@ class VentanaPrincipal(GridLayout):
                                 valorAcum*=valorVar
                             else:
                                 if (comando=="divida" or comando=="modulo") and valorVar==0: 
-                                    print(f"El valor del divisor es 0. El programa no puede continuar.")
+                                    self.abrirError(f"El valor del divisor es 0. El programa no puede continuar.")
                                     valido=False
                                 elif comando=="divida":
                                     valorAcum/=valorVar
@@ -329,7 +328,7 @@ class VentanaPrincipal(GridLayout):
                                 elif comando=="potencia" and tipoVar=="I": 
                                     valorAcum=pow(valorAcum, valorVar)
                                 else:
-                                    print(f"El valor del exponente no es entero ({valorVar}). El programa no puede continuar.")
+                                    self.abrirError(f"El valor del exponente no es entero ({valorVar}). El programa no puede continuar.")
                                     valido=False
 
                             if valido:
@@ -377,7 +376,7 @@ class VentanaPrincipal(GridLayout):
                     objetoVar=self.vectorMemoria[posVar]
                     tipoVar=objetoVar.getTipo()
                     if tipoVar!="C":
-                        print("El valor de la variable a concatenar no es una cadena")
+                        self.abrirError("El valor de la variable a concatenar no es una cadena")
                         valido=False
                     else:
                         valorVar=objetoVar.getValor()   
@@ -392,13 +391,13 @@ class VentanaPrincipal(GridLayout):
                     objetoVar=self.vectorMemoria[posVar]
                     tipoVar=objetoVar.getTipo()
                     if tipoVar!="C":
-                        print("El valor de la variable a eliminar no es una cadena")
+                        self.abrirError(f"El valor de la variable a eliminar no es una cadena. Su tipo es {tipoVar}")
                         valido=False
                     else:
                         objetoAcum=self.vectorMemoria[0]
                         tipoAcum=objetoAcum.getTipo()
                         if tipoAcum!="C":
-                            print("El valor en el acumulador no es una cadena, no se puede continuar con la operación")
+                            self.abrirError(f"El valor en el acumulador es de tipo {tipoAcum} y no es una cadena, no se puede continuar con la operación.")
                             valido=False
                         else:
                             valorVar=objetoVar.getValor() 
@@ -412,13 +411,13 @@ class VentanaPrincipal(GridLayout):
                     objetoVar=self.vectorMemoria[posVar]
                     tipoVar=objetoVar.getTipo()
                     if tipoVar!="I":
-                        print("El valor de la variable no es válido para la operación")
+                        self.abrirError(f"El tipo de la variable no es válido para la operación. Tipo de la variable: {tipoVar}")
                         valido=False
                     else:
                         objetoAcum=self.vectorMemoria[0]
                         tipoAcum=objetoAcum.getTipo()
                         if tipoAcum!="C":
-                            print("El valor en el acumulador no es una cadena, no se puede continuar con la operación")
+                            self.abrirError(f"El tipo de variable en el acumulador no es una cadena, no se puede continuar con la operación. Su tipo es: {tipoAcum}")
                             valido=False
                         else:
                             valorVar=objetoVar.getValor()
@@ -434,7 +433,7 @@ class VentanaPrincipal(GridLayout):
                     objetoVar1=self.vectorMemoria[posVar1]
                     tipoVar1=objetoVar1.getTipo()
                     if tipoVar1!="L":
-                        print("Tipo de dato inválido")
+                        self.abrirError(f"Tipo de dato inválido: {tipoVar1}")
                         valido=False
                     else:
                         variable2=linea[2]
@@ -442,7 +441,7 @@ class VentanaPrincipal(GridLayout):
                         objetoVar2=self.vectorMemoria[posVar2]
                         tipoVar2=objetoVar2.getTipo()
                         if tipoVar2!="L":
-                            print("Tipo de dato inválido")
+                            self.abrirError(f"Tipo de dato inválido: {tipoVar2}")
                             valido=False
                         else:
                             variable3=linea[3]
@@ -450,7 +449,7 @@ class VentanaPrincipal(GridLayout):
                             objetoVar3=self.vectorMemoria[posVar3]
                             tipoVar3=objetoVar3.getTipo()
                             if tipoVar3!="L":
-                                print("Tipo de dato inválido")
+                                self.abrirError(f"Tipo de dato inválido: {tipoVar3}")
                                 valido=False
                             else:
                                 valorVar1=objetoVar1.getValor()
@@ -467,7 +466,7 @@ class VentanaPrincipal(GridLayout):
                     objetoVar1=self.vectorMemoria[posVar1]
                     tipoVar1=objetoVar1.getTipo()
                     if tipoVar1!="L":
-                        print("Tipo de dato inválido")
+                        self.abrirError(f"Tipo de dato inválido: {tipoVar1}")
                         valido=False
                     else:
                         variable2=linea[2]
@@ -475,7 +474,7 @@ class VentanaPrincipal(GridLayout):
                         objetoVar2=self.vectorMemoria[posVar2]
                         tipoVar2=objetoVar2.getTipo()
                         if tipoVar2!="L":
-                            print("Tipo de dato inválido")
+                            self.abrirError(f"Tipo de dato inválido: {tipoVar2}")
                             valido=False
                         else:
                             valorVar1=objetoVar1.getValor()
@@ -498,32 +497,34 @@ class VentanaPrincipal(GridLayout):
                     objetoVar1=self.vectorMemoria[posVar1]
                     tipoVar1=objetoVar1.getTipo()
                     if tipoVar=="C" or tipoVar=="L":
-                        print("Tipo de dato inválido en la variable")
+                        self.abrirError(f"Tipo de dato inválido en la variable: {tipoVar1}")
                         valido=False
                     else:
                         base=objetoVar1.getValor()
                         if base<=1:
-                            print("La base del loagritmo es inválida")
+                            self.abrirError(f"La base del logaritmo es inválida: {base}")
                             valido=False
                         else:
                             objetoAcum=self.vectorMemoria[0]    #Se accede al acumulador
                             tipoAcum=objetoAcum.getTipo() 
                             if tipoAcum=="C" or tipoAcum=="L":
-                                print("Tipo de dato inválido en el acumulador")
+                                self.abrirError(f"Tipo de dato inválido en el acumulador: {tipoAcum}")
                                 valido=False
                             else:
                                 potencia=objetoAcum.getValor()
                                 if potencia<1:
-                                    print("La potencia del loagritmo es inválida")
+                                    self.abrirError(f"La potencia del logaritmo es inválida: {potencia}")
                                     valido=False
                                 else:
                                     logaritmo=log(potencia, base)
                                     objetoAcum.setValor(logaritmo)
                                     self.vectorMemoria[0]=objetoAcum
             else:   #Se detectan los comentarios o líneas en blanco
-                print(f"{self.apuntador}: Linea omitida",end="")
+                pass
 
-            print("")
+            if not valido:
+                self.programaValido=False
+                return None
 
             self.apuntador=proxDirecc
             self.programaValido=valido
@@ -532,8 +533,11 @@ class VentanaPrincipal(GridLayout):
             self.seccionMemoria.scroll.actualizarDatosMem()
 
     def ejecutarPrograma(self, obj):
-        if len(self.listaProgramas)==0 or self.variableLeida==False:
-            print("Error")
+        if len(self.listaProgramas)==0:
+            self.abrirError("No hay programas cargados en memoria")
+            return None
+        elif self.variableLeida==False:
+            self.abrirError("Aún no se ha leído la variable")
             return None
         while True:
             self.ejecutarPaso(obj)

@@ -5,13 +5,15 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.graphics import Color, Rectangle
 
+from RecuadroImagen import *
+
 import funciones as func
 
 # Contiene las clases que definen las secciones principales de la interfaz gráfica
 
 sizeFontScroll="14sp"
 
-class SeccionInstrucciones(GridLayout):
+class SeccionInstrucciones(GridLayout, ActualizaRect):
 
     def __init__(self, app, **kwargs):
         super(SeccionInstrucciones, self).__init__(**kwargs)
@@ -45,12 +47,8 @@ class SeccionInstrucciones(GridLayout):
         self.add_widget(self.titulo)
         self.add_widget(self.scroll) 
 
-    def _actualizar_rect(self, instance, value):
-        instance.rect.pos = instance.pos
-        instance.rect.size = instance.size
 
-
-class VacioInstrucciones(BoxLayout):
+class VacioInstrucciones(BoxLayout, ActualizaRect):
 
     def __init__(self, **kwargs):
         super(VacioInstrucciones, self).__init__(**kwargs)
@@ -66,12 +64,7 @@ class VacioInstrucciones(BoxLayout):
         self.add_widget(Label(text="- - -", size_hint_x=0.45))
 
 
-    def _actualizar_rect(self, instance, value):
-        instance.rect.pos = instance.pos
-        instance.rect.size = instance.size
-
-
-class ScrollInstrucciones(ScrollView):
+class ScrollInstrucciones(ScrollView, ActualizaRect):
 
     def __init__(self, app, **kwargs):
         super(ScrollInstrucciones, self).__init__(**kwargs)
@@ -117,17 +110,23 @@ class ScrollInstrucciones(ScrollView):
             self.listaSigIns[pos-self.limites[0]].text=mensaje          #Se cambia el valor de cada etiqueta que representa el espacio de instrucción siguiente
 
 
-    def _actualizar_rect(self, instance, value):
-        instance.rect.pos = instance.pos
-        instance.rect.size = instance.size
-
-
-class SeccionVariables(GridLayout):
+class SeccionVariables(GridLayout, ActualizaRect):
 
     def __init__(self, app, **kwargs):
         super(SeccionVariables, self).__init__(**kwargs)
         self.rows=2
         self.app=app
+
+        self.bind(size=self._actualizar_rect, pos=self._actualizar_rect)
+
+        with self.canvas.before:
+            Color(89/255, 14/255, 100/255, 0.8)  # colors range from 0-1 not 0-255
+            self.rect = Rectangle(size=self.size, pos=self.pos)
+
+        self.resetSeccion()
+
+    def resetSeccion(self):
+        self.clear_widgets()
 
         self.titulo=GridLayout(cols=2, size_hint_y=0.24)
 
@@ -136,24 +135,26 @@ class SeccionVariables(GridLayout):
         self.titulo.add_widget(etiqueta1)
         self.titulo.add_widget(etiqueta2)
 
-        if app.listaProgramas==[]:
-            self.scroll=BoxLayout(orientation="horizontal")
-            self.scroll.add_widget(Label(text="- - -"))
-            self.scroll.add_widget(Label(text="- - -"))
+        if self.app.listaProgramas==[]:
+            self.scroll=VacioVarEtq()
         else:
             self.scroll=ScrollVariables(self.app)
 
         self.add_widget(self.titulo)
         self.add_widget(self.scroll)
 
-    def reset(self):
-        self.scroll=ScrollVariables(self.app)
 
-
-class ScrollVariables(ScrollView):
+class ScrollVariables(ScrollView, ActualizaRect):
 
     def __init__(self, app, **kwargs):
         super(ScrollVariables, self).__init__(**kwargs)
+
+        self.bind(size=self._actualizar_rect, pos=self._actualizar_rect)
+
+        with self.canvas.before:
+            Color(134/255, 134/255, 135/255, 0.41)  # colors range from 0-1 not 0-255
+            self.rect = Rectangle(size=self.size, pos=self.pos)
+
         self.app=app
 
         columnaVariables=GridLayout(cols=2, spacing=5, size_hint_y=None)
@@ -178,24 +179,34 @@ class ScrollVariables(ScrollView):
         self.add_widget(columnaVariables)
 
 
-class SeccionEtiquetas(GridLayout):
+class SeccionEtiquetas(GridLayout, ActualizaRect):
 
     def __init__(self, app, **kwargs):
         super(SeccionEtiquetas, self).__init__(**kwargs)
         self.rows=2
         self.app=app
-        self.titulo=GridLayout(cols=2, height=60, size_hint_y=None)
 
-        etiqueta1=Label(text="[b]Posición[/b]",size_hint_y=None, markup=True)
-        etiqueta2=Label(text="[b]Etiqueta[/b]",size_hint_y=None, markup=True)
+        self.bind(size=self._actualizar_rect, pos=self._actualizar_rect)
+
+        with self.canvas.before:
+            Color(89/255, 14/255, 100/255, 0.8)  # colors range from 0-1 not 0-255
+            self.rect = Rectangle(size=self.size, pos=self.pos)
+
+        self.resetSeccion()
+
+    def resetSeccion(self):
+        self.clear_widgets()
+
+        self.titulo=GridLayout(cols=2, size_hint_y=0.24)
+
+        etiqueta1=Label(text="[b]Posición[/b]", markup=True)
+        etiqueta2=Label(text="[b]Etiqueta[/b]", markup=True)
 
         self.titulo.add_widget(etiqueta1)
         self.titulo.add_widget(etiqueta2)
 
-        if app.listaProgramas==[]:
-            self.scroll=BoxLayout(orientation="horizontal")
-            self.scroll.add_widget(Label(text="- - -"))
-            self.scroll.add_widget(Label(text="- - -"))
+        if self.app.listaProgramas==[]:
+            self.scroll=VacioVarEtq()
         else:
             self.scroll=ScrollEtiquetas(self.app)
 
@@ -234,6 +245,21 @@ class ScrollEtiquetas(ScrollView):
         self.add_widget(columnaEtiquetas)
 
 
+class VacioVarEtq(BoxLayout, ActualizaRect):
+
+    def __init__(self, **kwargs):
+        super(VacioVarEtq, self).__init__(**kwargs)
+
+        self.bind(size=self._actualizar_rect, pos=self._actualizar_rect)
+
+        with self.canvas.before:
+            Color(134/255, 134/255, 135/255, 0.41)  # colors range from 0-1 not 0-255
+            self.rect = Rectangle(size=self.size, pos=self.pos)
+
+        self.add_widget(Label(text="- - -"))
+        self.add_widget(Label(text="- - -"))
+
+
 class SeccionResultados(GridLayout):
 
     def __init__(self, app, **kwargs):
@@ -244,41 +270,47 @@ class SeccionResultados(GridLayout):
 
         pantalla=GridLayout(rows=2, size_hint_y=0.5)
         etiqueta1=Label(text="[b]PANTALLA[/b]",size_hint_y=0.2, markup=True)
-        cajaTexto=GridLayout(rows=1,padding=[20,10])
-        espacioInteraccion=TextInput(text="...",readonly=True)
-        self.textoPantalla=espacioInteraccion
-        cajaTexto.add_widget(espacioInteraccion)
+        cajaTexto1=GridLayout(rows=1,padding=[20,10])
+        espacioInteraccion=RecuadroImagen("...",'imagenes/pantalla.png')
+        self.textoPantalla=espacioInteraccion.etiqueta
+        cajaTexto1.add_widget(espacioInteraccion)
 
         pantalla.add_widget(etiqueta1)
-        pantalla.add_widget(cajaTexto)
+        pantalla.add_widget(cajaTexto1)
 
         impresora=GridLayout(rows=2, size_hint_y=0.5)
         etiqueta2=Label(text="[b]IMPRESORA[/b]",size_hint_y=0.2, markup=True)
-        textoImpreso=Label(text="...")
-        self.textoImpreso=textoImpreso
+        cajaTexto2=GridLayout(rows=1,padding=[20,10])
+        espacioImpresora=RecuadroImagen("...",'imagenes/impresora.png')
+        self.textoImpreso=espacioImpresora.etiqueta
+        cajaTexto2.add_widget(espacioImpresora)
+        
         impresora.add_widget(etiqueta2)
-        impresora.add_widget(textoImpreso)
+        impresora.add_widget(cajaTexto2)
 
         resultados.add_widget(pantalla)
         resultados.add_widget(impresora)
 
         self.add_widget(resultados)
 
-    def setScroll(self,instrucciones):
-        #self.scroll=ScrollInstruucciones(instrucciones)
-        pass
 
-
-class SeccionMemoria(GridLayout):
+class SeccionMemoria(GridLayout, ActualizaRect):
 
     def __init__(self, app, **kwargs):
         super(SeccionMemoria, self).__init__(**kwargs)
         self.rows=2
         self.app=app
-        self.titulo=GridLayout(cols=2, height=60, size_hint_y=0.2)
 
-        etiqueta1=Label(text="[b]Posición[/b]",size_hint_y=None, markup=True)
-        etiqueta2=Label(text="[b]Memoria[/b]",size_hint_y=None, markup=True)
+        self.bind(size=self._actualizar_rect, pos=self._actualizar_rect)
+
+        with self.canvas.before:
+            Color(89/255, 14/255, 100/255, 0.8)  # colors range from 0-1 not 0-255
+            self.rect = Rectangle(size=self.size, pos=self.pos)
+
+        self.titulo=GridLayout(cols=2, size_hint_y=0.12)
+
+        etiqueta1=Label(text="[b]Posición[/b]", markup=True, size_hint_x=0.45)
+        etiqueta2=Label(text="[b]Memoria[/b]", markup=True, size_hint_x=0.55)
 
         self.titulo.add_widget(etiqueta1)
         self.titulo.add_widget(etiqueta2)
@@ -291,10 +323,17 @@ class SeccionMemoria(GridLayout):
         self.scroll=ScrollMemoria(self.app)
 
 
-class ScrollMemoria(ScrollView):
+class ScrollMemoria(ScrollView, ActualizaRect):
 
     def __init__(self, app, **kwargs):
         super(ScrollMemoria, self).__init__(**kwargs)
+
+        self.bind(size=self._actualizar_rect, pos=self._actualizar_rect)
+
+        with self.canvas.before:
+            Color(134/255, 134/255, 135/255, 0.41)  # colors range from 0-1 not 0-255
+            self.rect = Rectangle(size=self.size, pos=self.pos)
+
         columnaMemoria=GridLayout(cols=2, spacing=5, size_hint_y=None)
         # Permite que se mueva a través de todos los datos
         columnaMemoria.bind(minimum_height=columnaMemoria.setter('height'))
@@ -313,7 +352,7 @@ class ScrollMemoria(ScrollView):
                 mensaje2=""
             else:
                 mensaje2=f"{direccionMem}"
-            etiqueta1 = Label(text=str(mensaje1), size_hint_y=None, width=100, font_size=sizeFontScroll)
+            etiqueta1 = Label(text=str(mensaje1), size_hint_y=None, text_size=(60, None), font_size=sizeFontScroll)
             etiqueta2 = Label(text=str(mensaje2), size_hint_y=None, text_size=(100, None), font_size=sizeFontScroll)
             columnaMemoria.add_widget(etiqueta1)
             columnaMemoria.add_widget(etiqueta2)
