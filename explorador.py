@@ -3,7 +3,7 @@ from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.filechooser import FileChooserListView
-from kivy.graphics import Color, Rectangle
+from kivy.graphics import Color, Rectangle, RoundedRectangle
 import os
 
 class VentanaExplorador(GridLayout):
@@ -62,7 +62,7 @@ class ExploradorArchivos(FileChooserListView):
 
         with self.canvas.before:
             Color(89/255, 14/255, 100/255, 0.8)  # colors range from 0-1 not 0-255
-            self.rect = Rectangle(size=self.size, pos=self.pos)
+            self.rect = RoundedRectangle(size=self.size, pos=self.pos)
     
     def _actualizar_rect(self, instance, value):
         self.rect.pos = (0,0)

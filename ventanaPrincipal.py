@@ -25,23 +25,8 @@ class VentanaPrincipal(GridLayout):
         self.sizeMemoria=self.finDocumento*10+50
 
         tituloPpal=Label(text="[b]Bienvenido al CH-MÁQUINA[/b]", markup=True, size_hint_y=0.2, height=100, font_size="40sp")
-        indicacion=Label(text="Ingrese los siguientes datos antes de continuar", markup=True, size_hint_y=0.08, height=100, font_size="20sp")
-        setConfiguraciones=GridLayout(rows=2, size_hint_y=0.6, padding=[20,20])
-        
-        etiqueta1=Label(text="Tamaño de kernel: ")
-        cajaTexto1=BoxLayout(padding=[30,30])
-        self.inputKernel=TextInput(text=f"{self.sizeKernel}")
-        cajaTexto1.add_widget(self.inputKernel)
-
-        etiqueta2=Label(text="Tamaño de memoria: ")
-        cajaTexto2=BoxLayout(padding=[30,30])
-        self.inputMemoria=TextInput(text=f"{self.sizeMemoria}")
-        cajaTexto2.add_widget(self.inputMemoria)
-        
-        setConfiguraciones.add_widget(etiqueta1)
-        setConfiguraciones.add_widget(cajaTexto1)
-        setConfiguraciones.add_widget(etiqueta2)
-        setConfiguraciones.add_widget(cajaTexto2)
+        indicacion=Label(text="Ingrese los siguientes datos antes de continuar", markup=True, size_hint_y=0.1, height=100, font_size="20sp")
+        self.setConfiguraciones=SeccionTamanio(self, size_hint_y=0.58)
 
         areaBotones=BoxLayout(orientation="horizontal", padding=[80,10], size_hint_y=0.12, spacing=70)
 
@@ -55,20 +40,24 @@ class VentanaPrincipal(GridLayout):
 
         self.add_widget(tituloPpal)
         self.add_widget(indicacion)
-        self.add_widget(setConfiguraciones)
+        self.add_widget(self.setConfiguraciones)
         self.add_widget(areaBotones)
 
 
     def aceptarSize(self, obj):
-        self.sizeKernel=int(self.inputKernel.text)
-        self.sizeMemoria=int(self.inputMemoria.text)
-        self.iniciarCH()
+        self.sizeKernel=int(self.setConfiguraciones.inputKernel.text)
+        self.sizeMemoria=int(self.setConfiguraciones.inputMemoria.text)
+        if self.sizeKernel>=self.sizeMemoria:
+            self.abrirError("El tamaño del Kernel debe ser menor que el tamaño de la memoria", (0.7, 0.7))
+        else:
+            self.iniciarCH()
 
     def cerrar(self, obj):
         self.appPpal.stop()
 
 
-    def iniciarCH(self, **kwargs):
+    def iniciarCH(self):
+        Window.clearcolor=(26/255, 28/255, 82/255, 0.8)
         Window.size=(1000,800)
         self.clear_widgets()
         self.rows=4
@@ -179,11 +168,11 @@ class VentanaPrincipal(GridLayout):
         self._popup.dismiss()
 
 
-    def abrirError(self, mensaje):
+    def abrirError(self, mensaje, propSize=(0.4, 0.4)):
         self.appError=MensajeErrorApp(self, self.cerrar_Error, mensaje)
         contenido=self.appError.build()
         self._popup = Popup(title="Error", content=contenido,
-                            size_hint=(0.4, 0.4))
+                            size_hint=propSize)
         self._popup.open()
 
     def cerrar_Error(self, obj):
@@ -192,7 +181,7 @@ class VentanaPrincipal(GridLayout):
 
     def cargarArchivo(self, obj):
         try:
-            print(self.ruta)
+            x=self.ruta
         except:
             self.abrirError("No se ha seleccionado ningún archivo")
         else:
@@ -550,8 +539,8 @@ class VentanaPrincipal(GridLayout):
 class CHMaquinaApp(App):
 
     def build(self):
-        Window.clearcolor=(26/255, 28/255, 82/255, 0.8)
-        Window.size=(750,500)
+        Window.clearcolor=(26/255, 78/255, 82/255, 0.8)
+        Window.size=(650,400)
         return VentanaPrincipal(self)
 
 if __name__ == '__main__':

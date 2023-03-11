@@ -3,9 +3,9 @@ from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
-from kivy.graphics import Color, Rectangle
+from kivy.graphics import Color, RoundedRectangle
 
-from RecuadroImagen import *
+from fondos import *
 
 import funciones as func
 
@@ -13,18 +13,56 @@ import funciones as func
 
 sizeFontScroll="14sp"
 
+class SeccionTamanio(GridLayout, ActualizaRect):
+    
+    def __init__(self, app, **kwargs):
+        super(SeccionTamanio, self).__init__(**kwargs)
+
+        self.app=app
+        self.rows=2
+        self.padding=[20,20]
+        self.spacing=10
+
+        self.pedirKernel=PedirTamanio(self.app, "Tamaño de Kernel: ", 1)
+        self.inputKernel=self.pedirKernel.input
+        self.pedirMemoria=PedirTamanio(self.app, "Tamaño de Memoria: ", 2)
+        self.inputMemoria=self.pedirMemoria.input
+        
+        self.add_widget(self.pedirKernel)
+        self.add_widget(self.pedirMemoria)
+
+
+class PedirTamanio(BoxLayout, ActualizaRect):
+
+    def __init__(self, app, mensaje, tipo, **kwargs):
+        super(PedirTamanio, self).__init__(**kwargs)
+
+        self.colorRectanguloSuave((179/255, 152/255, 198/255, 1))
+
+        self.app=app
+        etiqueta=EtiquetaEstilizada(mensaje, (101/255, 39/255, 145/255, 0.8), "17sp")
+        cajaTexto=BoxLayout(padding=[30,30])
+        if tipo==1:
+            tamanio=self.app.sizeKernel
+        else:
+            tamanio=self.app.sizeMemoria
+        self.input=TextInput(text=f"{tamanio}", halign="center")
+
+        cajaTexto.add_widget(self.input)
+
+        self.add_widget(etiqueta)
+        self.add_widget(cajaTexto)
+
+
 class SeccionInstrucciones(GridLayout, ActualizaRect):
 
     def __init__(self, app, **kwargs):
         super(SeccionInstrucciones, self).__init__(**kwargs)
         self.rows=2
         self.app=app
-        self.bind(size=self._actualizar_rect, pos=self._actualizar_rect)
 
-        with self.canvas.before:
-            Color(89/255, 14/255, 100/255, 0.8)  # colors range from 0-1 not 0-255
-            self.rect = Rectangle(size=self.size, pos=self.pos)
-        
+        self.colorRectanguloSuave((89/255, 14/255, 100/255, 0.8))
+
         self.resetSeccion()  
 
     def resetSeccion(self):
@@ -53,11 +91,7 @@ class VacioInstrucciones(BoxLayout, ActualizaRect):
     def __init__(self, **kwargs):
         super(VacioInstrucciones, self).__init__(**kwargs)
 
-        self.bind(size=self._actualizar_rect, pos=self._actualizar_rect)
-
-        with self.canvas.before:
-            Color(134/255, 134/255, 135/255, 0.41)  # colors range from 0-1 not 0-255
-            self.rect = Rectangle(size=self.size, pos=self.pos)
+        self.colorRectanguloSuave((134/255, 134/255, 135/255, 0.41))
 
         self.add_widget(Label(text="- - -", size_hint_x=0.2))
         self.add_widget(Label(text="- - -", size_hint_x=0.35))
@@ -69,11 +103,7 @@ class ScrollInstrucciones(ScrollView, ActualizaRect):
     def __init__(self, app, **kwargs):
         super(ScrollInstrucciones, self).__init__(**kwargs)
 
-        self.bind(size=self._actualizar_rect, pos=self._actualizar_rect)
-
-        with self.canvas.before:
-            Color(134/255, 134/255, 135/255, 0.41)  # colors range from 0-1 not 0-255
-            self.rect = Rectangle(size=self.size, pos=self.pos)
+        self.colorRectanguloSuave((134/255, 134/255, 135/255, 0.41))
 
         self.app=app
         self.listaSigIns=[]
@@ -117,11 +147,7 @@ class SeccionVariables(GridLayout, ActualizaRect):
         self.rows=2
         self.app=app
 
-        self.bind(size=self._actualizar_rect, pos=self._actualizar_rect)
-
-        with self.canvas.before:
-            Color(89/255, 14/255, 100/255, 0.8)  # colors range from 0-1 not 0-255
-            self.rect = Rectangle(size=self.size, pos=self.pos)
+        self.colorRectanguloSuave((89/255, 14/255, 100/255, 0.8))
 
         self.resetSeccion()
 
@@ -149,11 +175,7 @@ class ScrollVariables(ScrollView, ActualizaRect):
     def __init__(self, app, **kwargs):
         super(ScrollVariables, self).__init__(**kwargs)
 
-        self.bind(size=self._actualizar_rect, pos=self._actualizar_rect)
-
-        with self.canvas.before:
-            Color(134/255, 134/255, 135/255, 0.41)  # colors range from 0-1 not 0-255
-            self.rect = Rectangle(size=self.size, pos=self.pos)
+        self.colorRectanguloSuave((134/255, 134/255, 135/255, 0.41))
 
         self.app=app
 
@@ -186,11 +208,7 @@ class SeccionEtiquetas(GridLayout, ActualizaRect):
         self.rows=2
         self.app=app
 
-        self.bind(size=self._actualizar_rect, pos=self._actualizar_rect)
-
-        with self.canvas.before:
-            Color(89/255, 14/255, 100/255, 0.8)  # colors range from 0-1 not 0-255
-            self.rect = Rectangle(size=self.size, pos=self.pos)
+        self.colorRectanguloSuave((89/255, 14/255, 100/255, 0.8))
 
         self.resetSeccion()
 
@@ -217,10 +235,13 @@ class SeccionEtiquetas(GridLayout, ActualizaRect):
         self.scroll=ScrollEtiquetas(diccEtiquetas)
 
 
-class ScrollEtiquetas(ScrollView):
+class ScrollEtiquetas(ScrollView, ActualizaRect):
 
     def __init__(self, app, **kwargs):
         super(ScrollEtiquetas, self).__init__(**kwargs)
+
+        self.colorRectanguloSuave((134/255, 134/255, 135/255, 0.41))
+
         self.app=app
 
         columnaEtiquetas=GridLayout(cols=2, spacing=5, size_hint_y=None)
@@ -250,11 +271,7 @@ class VacioVarEtq(BoxLayout, ActualizaRect):
     def __init__(self, **kwargs):
         super(VacioVarEtq, self).__init__(**kwargs)
 
-        self.bind(size=self._actualizar_rect, pos=self._actualizar_rect)
-
-        with self.canvas.before:
-            Color(134/255, 134/255, 135/255, 0.41)  # colors range from 0-1 not 0-255
-            self.rect = Rectangle(size=self.size, pos=self.pos)
+        self.colorRectanguloSuave((134/255, 134/255, 135/255, 0.41))
 
         self.add_widget(Label(text="- - -"))
         self.add_widget(Label(text="- - -"))
@@ -301,11 +318,7 @@ class SeccionMemoria(GridLayout, ActualizaRect):
         self.rows=2
         self.app=app
 
-        self.bind(size=self._actualizar_rect, pos=self._actualizar_rect)
-
-        with self.canvas.before:
-            Color(89/255, 14/255, 100/255, 0.8)  # colors range from 0-1 not 0-255
-            self.rect = Rectangle(size=self.size, pos=self.pos)
+        self.colorRectanguloSuave((89/255, 14/255, 100/255, 0.8))
 
         self.titulo=GridLayout(cols=2, size_hint_y=0.12)
 
@@ -328,11 +341,7 @@ class ScrollMemoria(ScrollView, ActualizaRect):
     def __init__(self, app, **kwargs):
         super(ScrollMemoria, self).__init__(**kwargs)
 
-        self.bind(size=self._actualizar_rect, pos=self._actualizar_rect)
-
-        with self.canvas.before:
-            Color(134/255, 134/255, 135/255, 0.41)  # colors range from 0-1 not 0-255
-            self.rect = Rectangle(size=self.size, pos=self.pos)
+        self.colorRectanguloSuave((134/255, 134/255, 135/255, 0.41))
 
         columnaMemoria=GridLayout(cols=2, spacing=5, size_hint_y=None)
         # Permite que se mueva a través de todos los datos

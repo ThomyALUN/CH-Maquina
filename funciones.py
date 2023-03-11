@@ -322,7 +322,6 @@ def chequeoSintaxis(ruta):
     if not validez1:  
         return False, mensaje                   #Si se detecta un error en el primer paso de la revisión, se termina el chequeo de sintaxis
     
-    print("Primer paso válido\n")
     cantidadComandos=len(lineasCodigo)-len(omitirLineas)            #Se cálcula la cantidad de líneas con comandos hay en el archivo leído 
 
     validez2, diccEtiquetas, mensaje=busquedaEtiquetas(lineasCodigo, omitirLineas, posRetorne, cantidadComandos)
@@ -330,29 +329,20 @@ def chequeoSintaxis(ruta):
     if not validez2:  
         return False, mensaje                   #Si se detecta un error en el segundo paso de la revisión, se termina el chequeo de sintaxis
 
-    print("Segundo paso válido\n")
-    print(f"Lista de etiquetas: {diccEtiquetas}\n")
     validez3, mensaje=revisionEtiquetas(lineasCodigo, omitirLineas, posRetorne, diccEtiquetas)
 
     if not validez3:  
         return False, mensaje                   #Si se detecta un error en el tercer paso de la revisión, se termina el chequeo de sintaxis
 
-    print("Tercer paso válido\n")
     validez4, diccVariables, mensaje=busquedaVariables(lineasCodigo, omitirLineas, posRetorne)
 
     if not validez4: 
         return False, mensaje                   #Si se detecta un error en el cuarto paso de la revisión, se termina el chequeo de sintaxis
 
-    print("Cuarto paso válido\n")
-
-    print(f"Lista de variables: {diccVariables}\n")
-
     validez5, mensaje=revisionVariables(lineasCodigo, omitirLineas, posRetorne, diccVariables)
 
     if not validez5: 
         return False, mensaje                   #Si se detecta un error en el cuarto paso de la revisión, se termina el chequeo de sintaxis
-
-    print("Quinto paso válido\n")
 
     celdasMemNecesarias=posRetorne+len(diccEtiquetas)+len(diccVariables.keys())
     return True, celdasMemNecesarias, posRetorne, diccEtiquetas, diccVariables, omitirLineas
