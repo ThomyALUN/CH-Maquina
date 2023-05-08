@@ -14,7 +14,7 @@ sume m
 almacene respuesta
 cargue intermedia
 vayasi ciclo fin
-etiqueta ciclo 11
+etiqueta ciclo 10
 etiqueta fin 23
 muestre resultado
 muestre respuesta

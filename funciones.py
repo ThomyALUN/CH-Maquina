@@ -347,7 +347,7 @@ def chequeoSintaxis(ruta):
     celdasMemNecesarias=posRetorne+len(diccEtiquetas)+len(diccVariables.keys())
     return True, celdasMemNecesarias, posRetorne, diccEtiquetas, diccVariables, omitirLineas
 
-def cargarPrograma(ruta, posDispMem, vectorMemoria, omitirLineasGlobal, listaProgramas):
+def cargarPrograma(ruta, posDispMem, vectorMemoria, omitirLineasGlobal:list, listaProgramas:list):
 
     tupla=chequeoSintaxis(ruta)
 
@@ -395,7 +395,7 @@ def cargarPrograma(ruta, posDispMem, vectorMemoria, omitirLineasGlobal, listaPro
 
     posDispMem=posDispMem+len(listaVariables)         #Nueva ubicación de las posiciones de memoria disponibles
 
-    infoPrograma=[limitesPrograma, posVariablesMem, diccEtiquetas]
+    infoPrograma=Programa(ruta, limitesPrograma, posVariablesMem, diccEtiquetas)
     listaProgramas.append(infoPrograma)
 
     return True, vectorMemoria, posDispMem, omitirLineasGlobal, listaProgramas

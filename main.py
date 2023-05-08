@@ -62,7 +62,9 @@ class VentanaPrincipal(GridLayout):
 
     def iniciarCH(self):
         Window.clearcolor=(26/255, 28/255, 82/255, 0.8)
-        Window.size=(1000,800)
+        Window.size=(1200,900)
+        Window.top=540-Window.height/2
+        Window.left=960-Window.width/2
         self.clear_widgets()
         self.rows=4
         self.padding=[10,10]
@@ -79,10 +81,10 @@ class VentanaPrincipal(GridLayout):
         self.vectorMemoria, self.posDispMem = func.inicializarMemoria(self.sizeKernel, self.sizeMemoria)
         
         # Acá se define la sección del título
-        self.tituloPpal=Label(text="[b]CH-MÁQUINA[/b]", markup=True, size_hint_y=0.08, height=100, font_size="40sp")
+        self.tituloPpal=Label(text="[b]CH-MÁQUINA[/b]", markup=True, size_hint_y=0.07, height=100, font_size="40sp")
         
         # Acá se definen la sección para cargar programas
-        caja=BoxLayout(orientation="horizontal", height=50, size_hint_y=0.12, padding=[10,8,10,20], spacing=10)
+        caja=BoxLayout(orientation="horizontal", height=50, size_hint_y=0.08, padding=[10,8,10,20], spacing=10)
         mensajeRuta=Label(text="Ruta del archivo: ", width=100, size_hint_x=0.2)
         self.textoRuta=TextInput(text="", readonly=True, width=200, size_hint_x=0.6)
         botonExplorador=Button(text="Buscar archivo", width=100, size_hint_x=0.2)
@@ -93,7 +95,10 @@ class VentanaPrincipal(GridLayout):
         caja.add_widget(botonExplorador)
 
         # Acá se define la zona de muestra
-        zonaMuestra=GridLayout(cols=4, size_hint_y=0.6,spacing=10)
+        zonaMuestra=GridLayout(cols=3, size_hint_y=0.7,spacing=10)
+        bloque=GridLayout(rows=2, spacing=10, size_hint_x=0.5)
+        subzona1=GridLayout(cols=2, spacing=10, size_hint_x=0.6)
+        subzona2=BoxLayout(orientation="horizontal", spacing=10, size_hint_y=0.4)
 
         self.seccionInstrucciones=SeccionInstrucciones(self)
         primeraColumna=self.seccionInstrucciones
@@ -104,19 +109,25 @@ class VentanaPrincipal(GridLayout):
         segundaColumna.add_widget(self.seccionVariables)
         segundaColumna.add_widget(self.seccionEtiquetas)
 
-        self.seccionResultados=SeccionResultados(self)
+        self.seccionResultados=SeccionResultados(self, size_hint_x=0.25)
         terceraColumna=self.seccionResultados
 
-        self.seccionMemoria=SeccionMemoria(self)
+        self.seccionMemoria=SeccionMemoria(self, size_hint_x=0.25)
         cuartaColumna=self.seccionMemoria
 
-        zonaMuestra.add_widget(primeraColumna)
-        zonaMuestra.add_widget(segundaColumna)
+        self.seccionProgramas=SeccionProgramasMem(self)
+
+        subzona1.add_widget(primeraColumna)
+        subzona1.add_widget(segundaColumna)
+        subzona2.add_widget(self.seccionProgramas)
+        bloque.add_widget(subzona1)
+        bloque.add_widget(subzona2)
+        zonaMuestra.add_widget(bloque)
         zonaMuestra.add_widget(terceraColumna)
         zonaMuestra.add_widget(cuartaColumna)
 
         # Acá se definen los botones inferiores
-        footer=BoxLayout(orientation="horizontal", size_hint_y=0.08, padding=[20,10], spacing=50)
+        footer=BoxLayout(orientation="horizontal", size_hint_y=0.07, padding=[20,10], spacing=50)
         self.botonCargarArchivo=Button(text="Cargar archivo", width=100, border=[20,20,20,20])
         self.botonCargarArchivo.bind(on_release=self.cargarArchivo)
         self.botonEjecutarPaso=Button(text="Ejecutar paso", width=100, border=[20,20,20,20])
@@ -204,7 +215,7 @@ class VentanaPrincipal(GridLayout):
                 print(self.listaProgramas)
 
                 try:
-                    self.apuntador=self.listaProgramas[self.programaActual][0][0]
+                    self.apuntador=self.listaProgramas[self.programaActual].limites[0]
                 except IndexError:
                     self.abrirError("El archivo no es válido")
                 else:
@@ -219,8 +230,11 @@ class VentanaPrincipal(GridLayout):
                     self.seccionResultados.textoPantalla.text=". . ."
                     self.seccionResultados.textoImpreso.text=". . ."
 
+                    self.seccionProgramas.resetSeccion()
+
                     self.seccionMemoria.scroll.actualizarDatosMem()
-            except TypeError:
+            except TypeError as e:
+                print(e)
                 self.abrirError("El archivo no es válido.")
 
     def ejecutarPaso(self, obj):
@@ -241,8 +255,8 @@ class VentanaPrincipal(GridLayout):
         except AttributeError:
             self.abrirError("No se ha seleccionado ningún programa")
         else:
-            posVariablesMem=self.listaProgramas[programaActual][1]
-            diccEtiquetas=self.listaProgramas[programaActual][2]
+            posVariablesMem=self.listaProgramas[programaActual].posVariablesMem
+            diccEtiquetas=self.listaProgramas[programaActual].diccEtiquetas
             linea=self.vectorMemoria[self.apuntador]
             tipoDato=type(self.vectorMemoria[self.apuntador])
             aritmeticos=["sume", "reste", "multiplique", "divida", "potencia", "modulo"]
@@ -519,11 +533,13 @@ class VentanaPrincipal(GridLayout):
                 self.programaValido=False
                 return None
 
+            self.listaProgramas[programaActual].cambiarIns(proxDirecc)
             self.apuntador=proxDirecc
             self.programaValido=valido
             self.finPrograma=fin
             self.seccionInstrucciones.scroll.actualizarIns()
             self.seccionMemoria.scroll.actualizarDatosMem()
+            self.seccionProgramas.resetSeccion()
 
     def ejecutarPrograma(self, obj):
         if len(self.listaProgramas)==0:
