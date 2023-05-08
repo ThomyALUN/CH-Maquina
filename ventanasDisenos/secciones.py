@@ -6,7 +6,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.dropdown import DropDown
 from kivy.uix.button import Button
 
-from fondos import *
+from ventanasDisenos.fondos import *
 
 import funciones as func
 
@@ -177,7 +177,11 @@ class SeccionProgramasMem(GridLayout, ActualizaRect):
         etiqueta3=Label(text="[b]Esp Mem[/b]", markup=True, size_hint_x=0.15)
         etiqueta4=Label(text="[b]Ins Act[/b]", markup=True, size_hint_x=0.15)
         etiqueta5=Label(text="[b]Pr[/b]", markup=True, size_hint_x=0.15)
-        etiqueta6=Label(text="[b]Q rest[/b]", markup=True, size_hint_x=0.15)
+        if self.app.indAlg==0:
+            mensaje6="T llegada"
+        else:
+            mensaje6="Q rest"
+        etiqueta6=Label(text=f"[b]{mensaje6}[/b]", markup=True, size_hint_x=0.15)
         self.titulo.add_widget(etiqueta1)
         self.titulo.add_widget(etiqueta2)
         self.titulo.add_widget(etiqueta3)
@@ -228,10 +232,13 @@ class ScrollProgramas(ScrollView, ActualizaRect):
                 mensaje5=f"{programa.prioridad}"
             else: 
                 mensaje5="- - -"
-            if programa.qRest!=None:
-                mensaje6=f"{programa.qRest}"
-            else: 
-                mensaje6="- - -"
+            if self.app.indAlg==0:
+                mensaje6=f"{programa.llegada}"
+            else:
+                if programa.qRest!=None:
+                    mensaje6=f"{programa.qRest}"
+                else: 
+                    mensaje6="- - -"
             etiqueta1 = Label(text=str(mensaje1), size_hint_y=None, height=50,size_hint_x=0.1, font_size=sizeFontScroll)
             etiqueta2 = Label(text=str(mensaje2), size_hint_y=None, height=50,size_hint_x=0.3, font_size=sizeFontScroll)
             etiqueta3 = Label(text=str(mensaje3), size_hint_y=None, height=50,size_hint_x=0.15, font_size=sizeFontScroll)

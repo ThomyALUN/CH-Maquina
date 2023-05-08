@@ -8,14 +8,14 @@ from kivy.core.window import Window
 
 from math import log
 
-from explorador import *
-from secciones import *
-from lecturaValor import *
-from mensajeError import *
+from ventanasDisenos.explorador import *
+from ventanasDisenos.secciones import *
+from ventanasDisenos.lecturaValor import *
+from ventanasDisenos.mensajeError import *
 
 
 class VentanaPrincipal(GridLayout):
-
+    algoritmos=["FCFS","SJF","SPN","Prioridad","SRTN","Round Robin"]
     def __init__(self, appPpal, **kwargs):
         self.rows=4
         super(VentanaPrincipal, self).__init__(**kwargs)
@@ -54,11 +54,19 @@ class VentanaPrincipal(GridLayout):
         elif self.algoritmo==PedirTamanio.algoritmos[0]:
             self.abrirError("No ha seleccionado ningún algoritmo de planificación", (0.7, 0.7))
         else:
+            self.indAlg=self.algoritmos.index(self.algoritmo)
             self.iniciarCH()
 
     def cerrar(self, obj):
         self.appPpal.stop()
 
+    def algoritmosPlan(self):
+        if self.indAlg==0:
+            if self.finPrograma:
+                self.programaActual=(self.programaActual+1)%(len(self.listaProgramas))
+                self.apuntador=self.listaProgramas[self.programaActual].limites[0]
+                self.finPrograma=False
+                self.seccionInstrucciones.resetSeccion()
 
     def iniciarCH(self):
         Window.clearcolor=(26/255, 28/255, 82/255, 0.8)
@@ -77,6 +85,7 @@ class VentanaPrincipal(GridLayout):
         self.valorLeido=None
         self.variableLeida=True
         self.listaProgramas=[]
+        self.programaActual=0
         self.omitirLineasGlobal=[]
         self.vectorMemoria, self.posDispMem = func.inicializarMemoria(self.sizeKernel, self.sizeMemoria)
         
@@ -211,11 +220,11 @@ class VentanaPrincipal(GridLayout):
                 else:
                     __, self.vectorMemoria, self.posDispMem, self.omitirLineasGlobal, self.listaProgramas=tupla
 
-                self.programaActual=len(self.listaProgramas)-1
                 print(self.listaProgramas)
 
                 try:
-                    self.apuntador=self.listaProgramas[self.programaActual].limites[0]
+                    if self.listaProgramas[-1]==self.listaProgramas[self.programaActual]: 
+                        self.apuntador=self.listaProgramas[self.programaActual].limites[0]
                 except IndexError:
                     self.abrirError("El archivo no es válido")
                 else:
@@ -246,8 +255,10 @@ class VentanaPrincipal(GridLayout):
             return None
         elif self.variableLeida==False:
             self.abrirError("Aún no se ha leído la variable")
+            self.apuntador=self.apPrev
             return None
 
+        self.apPrev=self.apuntador
         valido=True                             #Se asume que el funcionamiento es correcto
         fin=False                               #Se asume que la línea no es de retorno
         try:
@@ -537,6 +548,7 @@ class VentanaPrincipal(GridLayout):
             self.apuntador=proxDirecc
             self.programaValido=valido
             self.finPrograma=fin
+            self.algoritmosPlan()
             self.seccionInstrucciones.scroll.actualizarIns()
             self.seccionMemoria.scroll.actualizarDatosMem()
             self.seccionProgramas.resetSeccion()

@@ -7,7 +7,7 @@ from kivy.uix.textinput import TextInput
 from kivy.graphics import Color, Rectangle
 from kivy.core.window import Window
 
-from mensajeError import *
+from ventanasDisenos.mensajeError import *
 
 class VentanaLectura(GridLayout):
     def __init__(self, appPrincipal, appLector, cancelar, tipoVar, **kwargs):

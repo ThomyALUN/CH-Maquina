@@ -58,6 +58,7 @@ class Variable():
 
 class Programa:
     proxConsecutivo=0
+    tiempoLlegada=0
     def __init__(self, ruta:str, limitesPrograma:list, posVariablesMem:dict, diccEtiquetas:dict):
         self.id=Programa.proxConsecutivo
         self.nombre=ruta.split("\\")[-1]
@@ -65,15 +66,20 @@ class Programa:
         self.insAct=limitesPrograma[0]
         self.prioridad=None
         self.qRest=None
+        self.llegada=Programa.tiempoLlegada
 
         self.limites=limitesPrograma
         self.posVariablesMem=posVariablesMem
         self.diccEtiquetas=diccEtiquetas
 
         Programa.proxConsecutivo+=1
+        Programa.tiempoLlegada+=(limitesPrograma[1]-limitesPrograma[0])*4
 
-    def cambiarIns(self, nextIns):
+    def cambiarIns(self, nextIns:int):
         if nextIns>self.limites[1]:
             nextIns=self.limites[1]
         else:
             self.insAct=nextIns
+    
+    def cambiarPrioridad(self, prioridad:int):
+        self.prioridad=prioridad
