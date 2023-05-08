@@ -3,7 +3,8 @@ from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
-from kivy.graphics import Color, RoundedRectangle
+from kivy.uix.dropdown import DropDown
+from kivy.uix.button import Button
 
 from fondos import *
 
@@ -19,7 +20,7 @@ class SeccionTamanio(GridLayout, ActualizaRect):
         super(SeccionTamanio, self).__init__(**kwargs)
 
         self.app=app
-        self.rows=2
+        self.rows=3
         self.padding=[20,20]
         self.spacing=10
 
@@ -27,12 +28,16 @@ class SeccionTamanio(GridLayout, ActualizaRect):
         self.inputKernel=self.pedirKernel.input
         self.pedirMemoria=PedirTamanio(self.app, "Tamaño de Memoria: ", 2)
         self.inputMemoria=self.pedirMemoria.input
+        self.pedirAlg=PedirTamanio(self.app, "Algoritmo de planificación: ", 0)
         
         self.add_widget(self.pedirKernel)
         self.add_widget(self.pedirMemoria)
+        self.add_widget(self.pedirAlg)
 
 
 class PedirTamanio(BoxLayout, ActualizaRect):
+
+    algoritmos=["- Seleccionar -","FCFS","SJF","SPN","Prioridad","SRTN","Round Robin"]
 
     def __init__(self, app, mensaje, tipo, **kwargs):
         super(PedirTamanio, self).__init__(**kwargs)
@@ -40,19 +45,30 @@ class PedirTamanio(BoxLayout, ActualizaRect):
         self.colorRectanguloSuave((179/255, 152/255, 198/255, 1))
 
         self.app=app
-        etiqueta=EtiquetaEstilizada(mensaje, (101/255, 39/255, 145/255, 0.8), "17sp")
         cajaTexto=BoxLayout(padding=[30,30])
-        if tipo==1:
-            tamanio=self.app.sizeKernel
+        etiqueta=EtiquetaEstilizada(mensaje, (101/255, 39/255, 145/255, 0.8), "17sp")
+        if tipo==0:
+            self.botonPpal=Button(text=self.algoritmos[0], size_hint=(1,1))
+            self.drop=DropDown()
+            for nombre in self.algoritmos:
+                boton=Button(text=nombre, background_color=(200/255, 19/255, 245/255, 0.8), size_hint=(1,None), height=44)
+                boton.bind(on_release=lambda boton: self.drop.select(boton.text))
+                self.drop.add_widget(boton)
+            self.botonPpal.bind(on_release=self.drop.open)
+            self.drop.bind(on_select=lambda instance, x: setattr(self.botonPpal, 'text', x))
+            cajaTexto.add_widget(self.botonPpal)
         else:
-            tamanio=self.app.sizeMemoria
-        self.input=TextInput(text=f"{tamanio}", halign="center")
-
-        cajaTexto.add_widget(self.input)
-
+            if tipo==1:
+                tamanio=self.app.sizeKernel
+            elif tipo==2:
+                tamanio=self.app.sizeMemoria
+            self.input=TextInput(text=f"{tamanio}", halign="center")
+            cajaTexto.add_widget(self.input)
         self.add_widget(etiqueta)
         self.add_widget(cajaTexto)
 
+    def holaMundo(self, obj):
+        print("hola mundi")
 
 class SeccionInstrucciones(GridLayout, ActualizaRect):
 

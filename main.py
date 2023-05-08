@@ -13,6 +13,7 @@ from secciones import *
 from lecturaValor import *
 from mensajeError import *
 
+
 class VentanaPrincipal(GridLayout):
 
     def __init__(self, appPpal, **kwargs):
@@ -47,8 +48,11 @@ class VentanaPrincipal(GridLayout):
     def aceptarSize(self, obj):
         self.sizeKernel=int(self.setConfiguraciones.inputKernel.text)
         self.sizeMemoria=int(self.setConfiguraciones.inputMemoria.text)
+        self.algoritmo=self.setConfiguraciones.pedirAlg.botonPpal.text
         if self.sizeKernel>=self.sizeMemoria:
             self.abrirError("El tamaño del Kernel debe ser menor que el tamaño de la memoria", (0.7, 0.7))
+        elif self.algoritmo==PedirTamanio.algoritmos[0]:
+            self.abrirError("No ha seleccionado ningún algoritmo de planificación", (0.7, 0.7))
         else:
             self.iniciarCH()
 
@@ -534,14 +538,13 @@ class VentanaPrincipal(GridLayout):
                 break
 
 
-
-
 class CHMaquinaApp(App):
 
     def build(self):
         Window.clearcolor=(26/255, 78/255, 82/255, 0.8)
-        Window.size=(650,400)
+        Window.size=(650,600)
         return VentanaPrincipal(self)
+
 
 if __name__ == '__main__':
     CHMaquinaApp().run()

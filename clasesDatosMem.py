@@ -1,4 +1,4 @@
-#Esta clase servirá para diferenciar el acumulador de cualquier otro tipo de dato
+# Esta clase servirá para diferenciar el acumulador de cualquier otro tipo de dato
 class Acumulador():
 
     def __init__(self):
@@ -17,13 +17,14 @@ class Acumulador():
     def setValor(self, nuevoValor):
         self.__valor=nuevoValor
 
-#Esta clase representará el kernel, pero realmente no contendrá nada, solo será para diferenciarla de los demás tipos de datos en la memoria
+# Esta clase representará el kernel, pero realmente no contendrá nada, 
+# solo será para diferenciarla de los demás tipos de datos en la memoria
 class Kernel():
 
     def __init__(self):
         pass
 
-#Esta clase servirá para representar las variables declaradas en el programa
+# Esta clase servirá para representar las variables declaradas en el programa
 class Variable():
 
     valorTipos={

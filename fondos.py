@@ -50,10 +50,3 @@ class RecuadroImagen(GridLayout, ActualizaRect):
             
         self.add_widget(self.etiqueta)
 
-
-class MyApp(App):
-    def build(self):
-        return RecuadroImagen("Hola mundo",'imagenes/impresora.png')
-
-if __name__ == '__main__':
-    MyApp().run()
