@@ -36,22 +36,29 @@ class VentanaLectura(GridLayout):
     def verificarTextoVar(self, obj):
         texto=self.cajaTexto.text
         try:
-            if self.tipoVarLeida=="C":
+            if self.tipoVarLeida=="IP100":
+                try:
+                    self.valorLeido=int(texto)
+                    if self.valorLeido<0 or self.valorLeido>100:
+                        raise ValueError("Error de lectura")
+                except ValueError:
+                    self.valorLeido=None
+            elif self.tipoVarLeida=="C":
                 try:
                     self.valorLeido=str(texto)
-                except:
+                except ValueError:
                     self.valorLeido=None
             elif self.tipoVarLeida=="I" or self.tipoVarLeida=="L":
                 try:
                     self.valorLeido=int(texto)
                     if self.tipoVarLeida=="L" and (self.valorLeido!=0 or self.valorLeido!=1):
                         self.valorLeido=None
-                except:
+                except ValueError:
                     self.valorLeido=None
             elif self.tipoVarLeida=="R":
                 try:
                     self.valorLeido=float(texto)
-                except:
+                except ValueError:
                     self.valorLeido=None
             else:
                 self.valorLeido=None

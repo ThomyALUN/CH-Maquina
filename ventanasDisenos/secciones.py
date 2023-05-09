@@ -36,9 +36,8 @@ class SeccionTamanio(GridLayout, ActualizaRect):
 
 
 class PedirTamanio(BoxLayout, ActualizaRect):
-
-    algoritmos=["- Seleccionar -","FCFS","SJF","SPN","Prioridad","SRTN","Round Robin"]
-
+    algoritmos=["- Seleccionar -"]+["FCFS","SJF","SRTN","Prioridad no expropiativo",
+                "Prioridad expropiativo","Round Robin","Round Robin con Prioridad"]
     def __init__(self, app, mensaje, tipo, **kwargs):
         super(PedirTamanio, self).__init__(**kwargs)
 
@@ -66,9 +65,6 @@ class PedirTamanio(BoxLayout, ActualizaRect):
             cajaTexto.add_widget(self.input)
         self.add_widget(etiqueta)
         self.add_widget(cajaTexto)
-
-    def holaMundo(self, obj):
-        print("hola mundi")
 
 class SeccionInstrucciones(GridLayout, ActualizaRect):
 

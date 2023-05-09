@@ -72,6 +72,8 @@ class Programa:
         self.posVariablesMem=posVariablesMem
         self.diccEtiquetas=diccEtiquetas
 
+        self.terminado=False
+
         Programa.proxConsecutivo+=1
         Programa.tiempoLlegada+=(limitesPrograma[1]-limitesPrograma[0])*4
 
@@ -83,3 +85,6 @@ class Programa:
     
     def cambiarPrioridad(self, prioridad:int):
         self.prioridad=prioridad
+
+    def terminarPrograma(self):
+        self.terminado=True

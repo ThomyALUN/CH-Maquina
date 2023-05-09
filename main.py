@@ -15,15 +15,23 @@ from ventanasDisenos.mensajeError import *
 
 
 class VentanaPrincipal(GridLayout):
-    algoritmos=["FCFS","SJF","SPN","Prioridad","SRTN","Round Robin"]
+    algoritmos=["FCFS","SJF","SRTN","Prioridad no expropiativo","Prioridad expropiativo","Round Robin","Round Robin con Prioridad"]
     def __init__(self, appPpal, **kwargs):
         self.rows=4
         super(VentanaPrincipal, self).__init__(**kwargs)
-
+        self.quantum=None
         self.appPpal=appPpal
+        self.ventanaInicial()
+
+    def ventanaInicial(self, obj=None):
+        Window.clearcolor=(26/255, 78/255, 82/255, 0.8)
+        Window.size=(650,600)
+        Window.top=540-Window.height/2
+        Window.left=960-Window.width/2
+        self.clear_widgets()
         self.finDocumento=1
         self.sizeKernel=self.finDocumento*10+9
-        self.sizeMemoria=self.finDocumento*10+50
+        self.sizeMemoria=self.finDocumento*10+100
 
         tituloPpal=Label(text="[b]Bienvenido al CH-MÁQUINA[/b]", markup=True, size_hint_y=0.2, height=100, font_size="40sp")
         indicacion=Label(text="Ingrese los siguientes datos antes de continuar", markup=True, size_hint_y=0.1, height=100, font_size="20sp")
@@ -60,13 +68,74 @@ class VentanaPrincipal(GridLayout):
     def cerrar(self, obj):
         self.appPpal.stop()
 
-    def algoritmosPlan(self):
+    def cargarAlgoritmo(self):
+        # ["FCFS","SJF","SRTN","Prioridad no expropiativo","Prioridad expropiativo","Round Robin","Round Robin con Prioridad"]
         if self.indAlg==0:
+            # FCFS
+            programa=self.listaProgramas[self.programaLeido]
+            programa.cambiarPrioridad(100-programa.id)
+        elif self.indAlg==1:
+            # SJF (No expropiativo)
+            pass
+        elif self.indAlg==2:
+            # SJF (Expropiativo)
+            pass
+        elif self.indAlg==3:
+            # Prioridad no expropiativo
+            self.abrirLecPrioridad()
+        elif self.indAlg==4:
+            # Prioridad expropiativo
+            self.abrirLecPrioridad()
+        elif self.indAlg==5:
+            # Round Robin
+            pass
+        else:
+            # Round Robin con prioridad
+            self.abrirLecPrioridad()
+
+    def pasoAlgoritmo(self):
+        # ["FCFS","SJF","SRTN","Prioridad no expropiativo","Prioridad expropiativo","Round Robin","Round Robin con Prioridad"]
+        if self.indAlg==0:
+            # FCFS
             if self.finPrograma:
-                self.programaActual=(self.programaActual+1)%(len(self.listaProgramas))
-                self.apuntador=self.listaProgramas[self.programaActual].limites[0]
-                self.finPrograma=False
-                self.seccionInstrucciones.resetSeccion()
+                self.seleccionarPrioridad()
+        elif self.indAlg in [1,2]:
+            # SJF (No expropiativo), SJF (Expropiativo) = SRTN
+            if self.finPrograma:
+                self.seleccionarPrioridad()
+        elif self.indAlg in [3,4]:
+            # Prioridad no expropiativo, Prioridad expropiativo
+            if self.finPrograma:
+                self.seleccionarPrioridad()
+        elif self.indAlg==5:
+            # Round Robin
+            pass
+        else:
+            # Round Robin con prioridad
+            pass
+
+    def seleccionarPrioridad(self):
+        mayorPrioridad=None
+        self.programaActual=None
+        for i, programa in enumerate(self.listaProgramas):
+            if mayorPrioridad==None or programa.prioridad>mayorPrioridad:
+                if not programa.terminado:
+                    mayorPrioridad=programa.prioridad
+                    self.programaActual=i
+            elif mayorPrioridad==programa.prioridad:
+                datosProgAct=self.listaProgramas[self.programaActual]
+                if datosProgAct.llegada>programa.llegada:
+                    # Compara el tiempo de llegada si ambos programas tienen la misma prioridad
+                    if not programa.terminado:
+                        mayorPrioridad=programa.prioridad
+                        self.programaActual=i
+        try:
+            self.apuntador=self.listaProgramas[self.programaActual].limites[0]
+            self.finPrograma=False
+            self.seccionInstrucciones.resetSeccion()
+        except:
+            self.abrirError("Ya no hay más programas por ejecutar")
+
 
     def iniciarCH(self):
         Window.clearcolor=(26/255, 28/255, 82/255, 0.8)
@@ -74,6 +143,8 @@ class VentanaPrincipal(GridLayout):
         Window.top=540-Window.height/2
         Window.left=960-Window.width/2
         self.clear_widgets()
+        if self.indAlg in [5,6]:
+            self.abrirLecQuantum()
         self.rows=4
         self.padding=[10,10]
         #Atributos para el control de programas
@@ -137,16 +208,19 @@ class VentanaPrincipal(GridLayout):
 
         # Acá se definen los botones inferiores
         footer=BoxLayout(orientation="horizontal", size_hint_y=0.07, padding=[20,10], spacing=50)
-        self.botonCargarArchivo=Button(text="Cargar archivo", width=100, border=[20,20,20,20])
+        self.botonCargarArchivo=Button(text="Cargar archivo", border=[20,20,20,20])
         self.botonCargarArchivo.bind(on_release=self.cargarArchivo)
-        self.botonEjecutarPaso=Button(text="Ejecutar paso", width=100, border=[20,20,20,20])
+        self.botonEjecutarPaso=Button(text="Ejecutar paso", border=[20,20,20,20])
         self.botonEjecutarPaso.bind(on_release=self.ejecutarPaso)
-        self.botonEjecutarPrograma=Button(text="Ejecutar programa", width=100, border=[20,20,20,20])
+        self.botonEjecutarPrograma=Button(text="Ejecutar programa", border=[20,20,20,20])
         self.botonEjecutarPrograma.bind(on_release=self.ejecutarPrograma)
+        self.botonPantallaInicial=Button(text="Volver a la\nventana inicial", border=[20,20,20,20])
+        self.botonPantallaInicial.bind(on_release=self.ventanaInicial)
 
         footer.add_widget(self.botonCargarArchivo)
         footer.add_widget(self.botonEjecutarPaso)
         footer.add_widget(self.botonEjecutarPrograma)
+        footer.add_widget(self.botonPantallaInicial)
 
         # Acá se ensambla la vista principal
         self.add_widget(self.tituloPpal)
@@ -171,15 +245,48 @@ class VentanaPrincipal(GridLayout):
             self.textoRuta.text=""
         self._popup.dismiss()
 
+    def abrirLecPrioridad(self):
+        self.appLectura=LecturaValorApp(self, self.cerrarLecPrioridad, "IP100")
+        contenido=self.appLectura.build()
+        self._popup = Popup(title="Asignar prioridad", content=contenido,
+                            size_hint=(0.4, 0.4))
+        self._popup.open()
+
+    def cerrarLecPrioridad(self, obj):
+        try:
+            self.valorLeido=self.appLectura.ventana.valorLeido
+        except:
+            self.valorLeido=None
+        else:
+            self.listaProgramas[self.programaLeido].cambiarPrioridad(self.valorLeido)
+            self.seccionProgramas.resetSeccion()
+        self._popup.dismiss()
+
+    def abrirLecQuantum(self):
+        self.appLectura=LecturaValorApp(self, self.cerrarLecQuantum, "IP100")
+        contenido=self.appLectura.build()
+        self._popup = Popup(title="Definir Quantum", content=contenido,
+                            size_hint=(0.4, 0.4))
+        self._popup.open()
+
+    def cerrarLecQuantum(self, obj):
+        try:
+            self.valorLeido=self.appLectura.ventana.valorLeido
+        except:
+            self.valorLeido=None
+        else:
+            self.quantum=self.valorLeido
+            self.tituloPpal.text+=f"Quantum: {self.quantum}"
+        self._popup.dismiss()
 
     def abrirLectura(self):
-        self.appLectura=LecturaValorApp(self, self.cerrar_Lectura, self.tipoVarLeida)
+        self.appLectura=LecturaValorApp(self, self.cerrarLectura, self.tipoVarLeida)
         contenido=self.appLectura.build()
         self._popup = Popup(title="Leer dato", content=contenido,
                             size_hint=(0.4, 0.4))
         self._popup.open()
 
-    def cerrar_Lectura(self, obj):
+    def cerrarLectura(self, obj):
         try:
             self.valorLeido=self.appLectura.ventana.valorLeido
             self.variableLeida=True
@@ -189,8 +296,7 @@ class VentanaPrincipal(GridLayout):
             self.objetoVarLeida.setValor(self.valorLeido)
             self.vectorMemoria[self.posVarLeida]=self.objetoVarLeida
             self.seccionResultados.textoPantalla.text=str(self.valorLeido)
-        self._popup.dismiss()
-
+            self._popup.dismiss()
 
     def abrirError(self, mensaje, propSize=(0.4, 0.4)):
         self.appError=MensajeErrorApp(self, self.cerrar_Error, mensaje)
@@ -201,7 +307,6 @@ class VentanaPrincipal(GridLayout):
 
     def cerrar_Error(self, obj):
         self._popup.dismiss()
-
 
     def cargarArchivo(self, obj):
         try:
@@ -230,6 +335,8 @@ class VentanaPrincipal(GridLayout):
                 else:
                     self.programaValido=None
                     self.finPrograma=None
+                    self.programaLeido=len(self.listaProgramas)-1
+                    self.cargarAlgoritmo()
                     self.seccionInstrucciones.resetSeccion()
 
                     self.seccionVariables.resetSeccion()
@@ -388,6 +495,7 @@ class VentanaPrincipal(GridLayout):
                     self.seccionResultados.textoImpreso.text=str(valor)
                 elif comando=="retorne":
                     fin=True
+                    self.listaProgramas[self.programaActual].terminarPrograma()
                 elif comando=="concatene":
                     variable=linea[1]
                     posVar=posVariablesMem[variable]
@@ -548,7 +656,7 @@ class VentanaPrincipal(GridLayout):
             self.apuntador=proxDirecc
             self.programaValido=valido
             self.finPrograma=fin
-            self.algoritmosPlan()
+            self.pasoAlgoritmo()
             self.seccionInstrucciones.scroll.actualizarIns()
             self.seccionMemoria.scroll.actualizarDatosMem()
             self.seccionProgramas.resetSeccion()
@@ -569,8 +677,6 @@ class VentanaPrincipal(GridLayout):
 class CHMaquinaApp(App):
 
     def build(self):
-        Window.clearcolor=(26/255, 78/255, 82/255, 0.8)
-        Window.size=(650,600)
         return VentanaPrincipal(self)
 
 
