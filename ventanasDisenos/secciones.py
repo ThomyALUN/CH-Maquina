@@ -89,7 +89,7 @@ class SeccionInstrucciones(GridLayout, ActualizaRect):
         self.titulo.add_widget(etiqueta2)
         self.titulo.add_widget(etiqueta3)
 
-        if self.app.listaProgramas==[]:
+        if self.app.listaProgramas==[] or self.app.programaActual==None:
             self.scroll=VacioInstrucciones()
         else:
             self.scroll=ScrollInstrucciones(self.app)
@@ -172,8 +172,12 @@ class SeccionProgramasMem(GridLayout, ActualizaRect):
         etiqueta2=Label(text="[b]Programa[/b]", markup=True, size_hint_x=0.3)
         etiqueta3=Label(text="[b]Esp Mem[/b]", markup=True, size_hint_x=0.15)
         etiqueta4=Label(text="[b]Ins Act[/b]", markup=True, size_hint_x=0.15)
-        etiqueta5=Label(text="[b]Pr[/b]", markup=True, size_hint_x=0.15)
-        if self.app.indAlg==0:
+        if self.app.indAlg in [1,2]:
+            mensaje5="T rest"
+        else:
+            mensaje5="Pr"
+        etiqueta5=Label(text=f"[b]{mensaje5}[/b]", markup=True, size_hint_x=0.15)
+        if self.app.indAlg in [0,1,2,3,4]:
             mensaje6="T llegada"
         else:
             mensaje6="Q rest"
@@ -228,7 +232,7 @@ class ScrollProgramas(ScrollView, ActualizaRect):
                 mensaje5=f"{programa.prioridad}"
             else: 
                 mensaje5="- - -"
-            if self.app.indAlg==0:
+            if self.app.indAlg not in [5,6]:
                 mensaje6=f"{programa.llegada}"
             else:
                 if programa.qRest!=None:

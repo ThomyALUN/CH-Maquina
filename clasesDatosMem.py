@@ -62,11 +62,13 @@ class Programa:
     def __init__(self, ruta:str, limitesPrograma:list, posVariablesMem:dict, diccEtiquetas:dict):
         self.id=Programa.proxConsecutivo
         self.nombre=ruta.split("\\")[-1]
-        self.espMem=limitesPrograma[1]-limitesPrograma[0]+len(posVariablesMem)+len(diccEtiquetas)-1
+        self.espIns=limitesPrograma[1]-limitesPrograma[0]-1
+        self.espMem=self.espIns+len(posVariablesMem)+len(diccEtiquetas)
         self.insAct=limitesPrograma[0]
         self.prioridad=None
         self.qRest=None
         self.llegada=Programa.tiempoLlegada
+        self.tiempoRest=None
 
         self.limites=limitesPrograma
         self.posVariablesMem=posVariablesMem
@@ -88,3 +90,7 @@ class Programa:
 
     def terminarPrograma(self):
         self.terminado=True
+
+    def resetClase():
+        Programa.proxConsecutivo=0
+        Programa.tiempoLlegada=0

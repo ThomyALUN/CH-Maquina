@@ -70,43 +70,50 @@ class VentanaPrincipal(GridLayout):
 
     def cargarAlgoritmo(self):
         # ["FCFS","SJF","SRTN","Prioridad no expropiativo","Prioridad expropiativo","Round Robin","Round Robin con Prioridad"]
-        if self.indAlg==0:
-            # FCFS
+        try:
             programa=self.listaProgramas[self.programaLeido]
-            programa.cambiarPrioridad(100-programa.id)
-        elif self.indAlg==1:
-            # SJF (No expropiativo)
-            pass
-        elif self.indAlg==2:
-            # SJF (Expropiativo)
-            pass
-        elif self.indAlg==3:
-            # Prioridad no expropiativo
-            self.abrirLecPrioridad()
-        elif self.indAlg==4:
-            # Prioridad expropiativo
-            self.abrirLecPrioridad()
-        elif self.indAlg==5:
-            # Round Robin
-            pass
-        else:
-            # Round Robin con prioridad
-            self.abrirLecPrioridad()
+            if self.indAlg==0:
+                # FCFS
+                programa.cambiarPrioridad(100-programa.id)
+                if self.programaActual==None:
+                    self.seleccionarPrioridad(0)
+            elif self.indAlg in [1,2]:
+                # SJF (No expropiativo), SJF (Expropiativo)
+                programa.cambiarPrioridad(programa.espIns+2)
+                if self.indAlg==2:
+                    # Si es expropiativo
+                    self.seleccionarPrioridad(1)
+            elif self.indAlg in [3,4]:
+                # Prioridad no expropiativo, Prioridad expropiativo
+                self.abrirLecPrioridad()
+                if self.indAlg==4:
+                    # Si es expropiativo
+                    self.seleccionarPrioridad(0)
+            elif self.indAlg==5:
+                # Round Robin
+                pass
+            else:
+                # Round Robin con prioridad
+                self.abrirLecPrioridad()
+        except Exception as e:
+            print("acá", e)
 
     def pasoAlgoritmo(self):
         # ["FCFS","SJF","SRTN","Prioridad no expropiativo","Prioridad expropiativo","Round Robin","Round Robin con Prioridad"]
+        programa=self.listaProgramas[self.programaActual]
         if self.indAlg==0:
             # FCFS
             if self.finPrograma:
-                self.seleccionarPrioridad()
+                self.seleccionarPrioridad(0)
         elif self.indAlg in [1,2]:
             # SJF (No expropiativo), SJF (Expropiativo) = SRTN
+            programa.prioridad+=self.difDirec
             if self.finPrograma:
-                self.seleccionarPrioridad()
+                self.seleccionarPrioridad(1)
         elif self.indAlg in [3,4]:
             # Prioridad no expropiativo, Prioridad expropiativo
             if self.finPrograma:
-                self.seleccionarPrioridad()
+                self.seleccionarPrioridad(0)
         elif self.indAlg==5:
             # Round Robin
             pass
@@ -114,20 +121,21 @@ class VentanaPrincipal(GridLayout):
             # Round Robin con prioridad
             pass
 
-    def seleccionarPrioridad(self):
-        mayorPrioridad=None
+    def seleccionarPrioridad(self, modo:int):
+        # modo=0 -> mayor, modo=1 -> menor
+        valorPrioridad=None
         self.programaActual=None
         for i, programa in enumerate(self.listaProgramas):
-            if mayorPrioridad==None or programa.prioridad>mayorPrioridad:
+            if valorPrioridad==None or (programa.prioridad>valorPrioridad and modo==0) or (programa.prioridad<valorPrioridad and modo==1):
                 if not programa.terminado:
-                    mayorPrioridad=programa.prioridad
+                    valorPrioridad=programa.prioridad
                     self.programaActual=i
-            elif mayorPrioridad==programa.prioridad:
+            elif valorPrioridad==programa.prioridad:
                 datosProgAct=self.listaProgramas[self.programaActual]
                 if datosProgAct.llegada>programa.llegada:
                     # Compara el tiempo de llegada si ambos programas tienen la misma prioridad
                     if not programa.terminado:
-                        mayorPrioridad=programa.prioridad
+                        valorPrioridad=programa.prioridad
                         self.programaActual=i
         try:
             self.apuntador=self.listaProgramas[self.programaActual].limites[0]
@@ -138,6 +146,7 @@ class VentanaPrincipal(GridLayout):
 
 
     def iniciarCH(self):
+        func.Programa.resetClase()
         Window.clearcolor=(26/255, 28/255, 82/255, 0.8)
         Window.size=(1200,900)
         Window.top=540-Window.height/2
@@ -314,7 +323,6 @@ class VentanaPrincipal(GridLayout):
         except:
             self.abrirError("No se ha seleccionado ningún archivo")
         else:
-            try:
                 if self.ruta[-3:]!=".ch":
                     self.abrirError("El formato del archivo es inválido")
                     return None
@@ -328,7 +336,7 @@ class VentanaPrincipal(GridLayout):
                 print(self.listaProgramas)
 
                 try:
-                    if self.listaProgramas[-1]==self.listaProgramas[self.programaActual]: 
+                    if self.programaActual!=None and self.listaProgramas[-1]==self.listaProgramas[self.programaActual]: 
                         self.apuntador=self.listaProgramas[self.programaActual].limites[0]
                 except IndexError:
                     self.abrirError("El archivo no es válido")
@@ -349,9 +357,6 @@ class VentanaPrincipal(GridLayout):
                     self.seccionProgramas.resetSeccion()
 
                     self.seccionMemoria.scroll.actualizarDatosMem()
-            except TypeError as e:
-                print(e)
-                self.abrirError("El archivo no es válido.")
 
     def ejecutarPaso(self, obj):
         if len(self.listaProgramas)==0:
@@ -652,6 +657,7 @@ class VentanaPrincipal(GridLayout):
                 self.programaValido=False
                 return None
 
+            self.difDirec=self.apuntador-proxDirecc
             self.listaProgramas[programaActual].cambiarIns(proxDirecc)
             self.apuntador=proxDirecc
             self.programaValido=valido
