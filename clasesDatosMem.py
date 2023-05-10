@@ -70,7 +70,7 @@ class Programa:
         self.espMem=self.espIns+len(posVariablesMem)+len(diccEtiquetas)
         self.insAct=limitesPrograma[0]
         self.prioridad=None
-        self.qRest=None
+        self.qRest=0
         self.llegada=Programa.tiempoLlegada
         self.tiempoRest=None
 

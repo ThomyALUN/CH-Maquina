@@ -7,12 +7,18 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.core.window import Window
 
 from math import log
+from random import randint
 
+from classQueue import Queue
 from ventanasDisenos.explorador import *
 from ventanasDisenos.secciones import *
 from ventanasDisenos.lecturaValor import *
 from ventanasDisenos.mensajeError import *
 
+IO_INST=["lea","muestre","imprima"]
+ARITMETICOS=["sume", "reste", "multiplique", "divida", "potencia", "modulo"]
+CPU_INST = ARITMETICOS+ ["cargue","almacene","concatene","elimine","extraiga",
+                        "Y","O","NO","retorne","vaya","vayasi","logaritmo"]
 
 class VentanaPrincipal(GridLayout):
     algoritmos=["FCFS","SJF","SRTN","Prioridad no expropiativo","Prioridad expropiativo","Round Robin","Round Robin con Prioridad"]
@@ -74,9 +80,9 @@ class VentanaPrincipal(GridLayout):
             programa=self.listaProgramas[self.programaLeido]
             if self.indAlg==0:
                 # FCFS
-                programa.cambiarPrioridad(100-programa.id)
+                programa.cambiarPrioridad(programa.llegada)
                 if self.programaActual==None:
-                    self.seleccionarPrioridad(0)
+                    self.seleccionarPrioridad(1)
             elif self.indAlg in [1,2]:
                 # SJF (No expropiativo), SJF (Expropiativo)
                 programa.cambiarPrioridad(programa.espIns+2)
@@ -89,22 +95,27 @@ class VentanaPrincipal(GridLayout):
                 if self.indAlg==4:
                     # Si es expropiativo
                     self.seleccionarPrioridad(0)
-            elif self.indAlg==5:
-                # Round Robin
-                pass
-            else:
-                # Round Robin con prioridad
-                self.abrirLecPrioridad()
+            elif self.indAlg in [5,6]:
+                if self.indAlg==5:
+                    # Round Robin
+                    programa.cambiarPrioridad(1)
+                    self.colaPrioridad.enqueue(programa)
+                else:
+                    # Round Robin con prioridad
+                    self.abrirLecPrioridad()
+                
+                if self.programaActual==None:
+                    self.seleccionarQuantum()
         except Exception as e:
             print("acá", e)
 
-    def pasoAlgoritmo(self):
+    def pasoAlgoritmo(self, comando):
         # ["FCFS","SJF","SRTN","Prioridad no expropiativo","Prioridad expropiativo","Round Robin","Round Robin con Prioridad"]
         programa=self.listaProgramas[self.programaActual]
         if self.indAlg==0:
             # FCFS
             if self.finPrograma:
-                self.seleccionarPrioridad(0)
+                self.seleccionarPrioridad(1)
         elif self.indAlg in [1,2]:
             # SJF (No expropiativo), SJF (Expropiativo) = SRTN
             programa.prioridad+=self.difDirec
@@ -116,10 +127,10 @@ class VentanaPrincipal(GridLayout):
                 self.seleccionarPrioridad(0)
         elif self.indAlg==5:
             # Round Robin
-            pass
+            self.restarQuantum(comando)
         else:
             # Round Robin con prioridad
-            pass
+            self.restarQuantum(comando)
 
     def seleccionarPrioridad(self, modo:int):
         # modo=0 -> mayor, modo=1 -> menor
@@ -148,6 +159,7 @@ class VentanaPrincipal(GridLayout):
                 self.seccionInstrucciones.resetSeccion()
         except:
             self.abrirError("Ya no hay más programas por ejecutar")
+            self.programaValido=False
 
 
     def iniciarCH(self):
@@ -166,6 +178,7 @@ class VentanaPrincipal(GridLayout):
         self.programaValido=None    #Indica si el programa ha tenido algún error durante su ejecución
         self.finPrograma=None       #Indica si ya se han ejecutado todas las instrucciones del programa
 
+        self.colaPrioridad=Queue()
         self.appExplorador=None
         self.valorLeido=None
         self.variableLeida=True
@@ -367,7 +380,59 @@ class VentanaPrincipal(GridLayout):
 
                     self.seccionMemoria.scroll.actualizarDatosMem()
 
+    def asignarQuantum(self):
+        programa=self.listaProgramas[self.programaActual]
+        programa.qRest+=self.quantum
+        self.seccionProgramas.resetSeccion()
+
+    def restarQuantum(self, comando):
+        programa=self.listaProgramas[self.programaActual]
+        if comando in IO_INST:
+            unidades=randint(1,9)
+            programa.qRest-=unidades
+        elif comando in CPU_INST:
+            programa.qRest-=1
+        if programa.qRest<=0:
+            programa.qRest=0
+            if not programa.terminado:
+                self.colaPrioridad.enqueue(self.listaProgramas[self.programaActual])
+            self.seleccionarQuantum()
+
+    def seleccionarQuantum(self):
+        self.programaPrevio=self.programaActual
+
+        if self.colaPrioridad.size()==0:
+            self.recuperarQuantum()
+        try:
+            programa=self.colaPrioridad.dequeue()
+            for i, p2 in enumerate(self.listaProgramas):
+                if p2==programa:
+                    self.programaActual=i
+                    self.apuntador=programa.insAct
+                    self.guardarAcumulador(self.programaPrevio)
+                    self.cargarAcumulador()
+            self.asignarQuantum()
+        except:
+            self.abrirError("No hay más programas por ejecutar")
+
+    def recuperarQuantum(self):
+        self.colaPrioridad=Queue()
+        valorPrioridad=None
+        for programa in self.listaProgramas:
+            if valorPrioridad==None or programa.prioridad>valorPrioridad:
+                if not programa.terminado:
+                    valorPrioridad=programa.prioridad
+        for programa in self.listaProgramas:
+            if programa.prioridad==valorPrioridad and not programa.terminado:
+                self.colaPrioridad.enqueue(programa)
+
+
     def ejecutarPaso(self, obj):
+        if self.programaActual==None:
+            if self.indAlg in [0, 1, 2]:
+                self.seleccionarPrioridad(1)
+            else: 
+                self.seleccionarPrioridad(0)
         if len(self.listaProgramas)==0:
             self.abrirError("No hay programas cargados en memoria")
             return None
@@ -375,9 +440,8 @@ class VentanaPrincipal(GridLayout):
             self.abrirError("No se puede hacer más")
             return None
         elif self.variableLeida==False:
-            self.abrirError("Aún no se ha leído la variable")
-            self.apuntador=self.apPrev
-            return None
+            self.apuntador-=1
+            self.seccionInstrucciones.scroll.actualizarIns()
 
         self.apPrev=self.apuntador
         valido=True                             #Se asume que el funcionamiento es correcto
@@ -391,7 +455,7 @@ class VentanaPrincipal(GridLayout):
             diccEtiquetas=self.listaProgramas[programaActual].diccEtiquetas
             linea=self.vectorMemoria[self.apuntador]
             tipoDato=type(self.vectorMemoria[self.apuntador])
-            aritmeticos=["sume", "reste", "multiplique", "divida", "potencia", "modulo"]
+            
             proxDirecc=self.apuntador+1
             if self.apuntador not in self.omitirLineasGlobal and tipoDato!=func.Variable and linea!=None:
                 linea=linea.split()
@@ -433,7 +497,7 @@ class VentanaPrincipal(GridLayout):
                     else:
                         self.abrirError(f"Tipo de dato inválido {tipoVar} y {tipoAcum} no son equivalentes.")
                         valido=False          
-                elif comando in aritmeticos:
+                elif comando in ARITMETICOS:
                     variable=linea[1]                       #Recupera el nombre de la variable pasada como parámetro
                     posVar=posVariablesMem[variable]        #Halla la posición en memoria de dicha variable
                     objetoVar=self.vectorMemoria[posVar]    #Se recupera lo que hay en dicha posición de memoria
@@ -660,7 +724,7 @@ class VentanaPrincipal(GridLayout):
                                     objetoAcum.setValor(logaritmo)
                                     self.vectorMemoria[0]=objetoAcum
             else:   #Se detectan los comentarios o líneas en blanco
-                pass
+                comando=None
 
             if not valido:
                 self.programaValido=False
@@ -671,8 +735,9 @@ class VentanaPrincipal(GridLayout):
             self.apuntador=proxDirecc
             self.programaValido=valido
             self.finPrograma=fin
-            self.pasoAlgoritmo()
-            self.seccionInstrucciones.scroll.actualizarIns()
+            self.pasoAlgoritmo(comando)
+            if self.variableLeida:
+                self.seccionInstrucciones.scroll.actualizarIns()
             self.seccionMemoria.scroll.actualizarDatosMem()
             self.seccionProgramas.resetSeccion()
 
