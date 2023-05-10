@@ -1,9 +1,9 @@
 # Esta clase servirá para diferenciar el acumulador de cualquier otro tipo de dato
 class Acumulador():
 
-    def __init__(self):
-        self.__valor=None
-        self.__tipo=None
+    def __init__(self, valor=None, tipo=None):
+        self.__valor=valor
+        self.__tipo=tipo
 
     def getTipo(self):
         return self.__tipo
@@ -16,6 +16,10 @@ class Acumulador():
     
     def setValor(self, nuevoValor):
         self.__valor=nuevoValor
+
+    def copia(self):
+        copia=Acumulador(self.__valor, self.__tipo)
+        return copia
 
 # Esta clase representará el kernel, pero realmente no contendrá nada, 
 # solo será para diferenciarla de los demás tipos de datos en la memoria
@@ -75,6 +79,7 @@ class Programa:
         self.diccEtiquetas=diccEtiquetas
 
         self.terminado=False
+        self.estadoAcum=Acumulador()
 
         Programa.proxConsecutivo+=1
         Programa.tiempoLlegada+=(limitesPrograma[1]-limitesPrograma[0])*4
@@ -90,6 +95,9 @@ class Programa:
 
     def terminarPrograma(self):
         self.terminado=True
+
+    def almacenarAcum(self, obj:Acumulador):
+        self.estadoAcum=obj.copia()
 
     def resetClase():
         Programa.proxConsecutivo=0

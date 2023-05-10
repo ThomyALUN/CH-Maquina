@@ -123,6 +123,8 @@ class VentanaPrincipal(GridLayout):
 
     def seleccionarPrioridad(self, modo:int):
         # modo=0 -> mayor, modo=1 -> menor
+        self.programaPrevio=self.programaActual
+
         valorPrioridad=None
         self.programaActual=None
         for i, programa in enumerate(self.listaProgramas):
@@ -138,9 +140,12 @@ class VentanaPrincipal(GridLayout):
                         valorPrioridad=programa.prioridad
                         self.programaActual=i
         try:
-            self.apuntador=self.listaProgramas[self.programaActual].limites[0]
-            self.finPrograma=False
-            self.seccionInstrucciones.resetSeccion()
+            if self.programaActual!=self.programaPrevio:
+                self.apuntador=self.listaProgramas[self.programaActual].insAct
+                self.finPrograma=False
+                self.guardarAcumulador(self.programaPrevio)
+                self.cargarAcumulador()
+                self.seccionInstrucciones.resetSeccion()
         except:
             self.abrirError("Ya no hay más programas por ejecutar")
 
@@ -269,6 +274,10 @@ class VentanaPrincipal(GridLayout):
         else:
             self.listaProgramas[self.programaLeido].cambiarPrioridad(self.valorLeido)
             self.seccionProgramas.resetSeccion()
+        if self.indAlg == 2:
+            self.seleccionarPrioridad(1)
+        elif self.indAlg in [4,6]:
+            self.seleccionarPrioridad(0)
         self._popup.dismiss()
 
     def abrirLecQuantum(self):
@@ -678,6 +687,16 @@ class VentanaPrincipal(GridLayout):
             self.ejecutarPaso(obj)
             if self.programaValido==False or self.finPrograma==True or self.variableLeida==False:
                 break
+
+    def cargarAcumulador(self):
+        programa=self.listaProgramas[self.programaActual]
+        self.vectorMemoria[0]=programa.estadoAcum
+        self.seccionMemoria.scroll.actualizarDatosMem()
+
+    def guardarAcumulador(self, ind):
+        if ind:
+            programa=self.listaProgramas[ind]
+            programa.almacenarAcum(self.vectorMemoria[0])
 
 
 class CHMaquinaApp(App):
