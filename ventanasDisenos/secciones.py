@@ -228,7 +228,7 @@ class ScrollProgramas(ScrollView, ActualizaRect):
             mensaje2=f"{programa.nombre}"
             mensaje3=f"{programa.espMem}"
             mensaje4=f"{programa.insAct}"
-            if programa.prioridad!=None:
+            if programa.prioridad!=None and self.app.indAlg!=5:
                 mensaje5=f"{programa.prioridad}"
             else: 
                 mensaje5="- - -"

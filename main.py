@@ -18,7 +18,7 @@ from ventanasDisenos.mensajeError import *
 IO_INST=["lea","muestre","imprima"]
 ARITMETICOS=["sume", "reste", "multiplique", "divida", "potencia", "modulo"]
 CPU_INST = ARITMETICOS+ ["cargue","almacene","concatene","elimine","extraiga",
-                        "Y","O","NO","retorne","vaya","vayasi","logaritmo"]
+                        "Y","O","NO","vaya","vayasi","logaritmo"]
 
 class VentanaPrincipal(GridLayout):
     algoritmos=["FCFS","SJF","SRTN","Prioridad no expropiativo","Prioridad expropiativo","Round Robin","Round Robin con Prioridad"]
@@ -99,15 +99,26 @@ class VentanaPrincipal(GridLayout):
                 if self.indAlg==5:
                     # Round Robin
                     programa.cambiarPrioridad(1)
-                    self.colaPrioridad.enqueue(programa)
+                    if len(self.listaProgramas)==1 or self.programaActual==None:
+                        self.seleccionarQuantum()
+                    else:
+                        self.colaPrioridad.enqueue(programa)
                 else:
                     # Round Robin con prioridad
                     self.abrirLecPrioridad()
-                
-                if self.programaActual==None:
-                    self.seleccionarQuantum()
+                    if len(self.listaProgramas)==1 or self.programaActual==None:
+                        self.seleccionarQuantum()
+                    elif self.prioridadUltimo==self.maxPrioridad:
+                        self.colaPrioridad.enqueue(programa)
         except Exception as e:
             print("acá", e)
+
+    def contarTerminados(self):
+        contador=0
+        for programa in self.listaProgramas:
+            if programa.terminado:
+                contador+=1
+        return contador
 
     def pasoAlgoritmo(self, comando):
         # ["FCFS","SJF","SRTN","Prioridad no expropiativo","Prioridad expropiativo","Round Robin","Round Robin con Prioridad"]
@@ -179,6 +190,8 @@ class VentanaPrincipal(GridLayout):
         self.finPrograma=None       #Indica si ya se han ejecutado todas las instrucciones del programa
 
         self.colaPrioridad=Queue()
+        self.prioridadUltimo=0
+        self.maxPrioridad=0
         self.appExplorador=None
         self.valorLeido=None
         self.variableLeida=True
@@ -284,12 +297,18 @@ class VentanaPrincipal(GridLayout):
             self.valorLeido=self.appLectura.ventana.valorLeido
         except:
             self.valorLeido=None
+            self.listaProgramas[self.programaLeido].cambiarPrioridad(1)
         else:
             self.listaProgramas[self.programaLeido].cambiarPrioridad(self.valorLeido)
             self.seccionProgramas.resetSeccion()
+            self.prioridadUltimo=self.valorLeido
+            if len(self.listaProgramas)==1:
+                self.maxPrioridad=self.listaProgramas[0].prioridad
+            if self.maxPrioridad==self.prioridadUltimo!=0 and self.indAlg==6:
+                self.colaPrioridad.enqueue(self.listaProgramas[self.programaLeido])
         if self.indAlg == 2:
             self.seleccionarPrioridad(1)
-        elif self.indAlg in [4,6]:
+        elif self.indAlg==4:
             self.seleccionarPrioridad(0)
         self._popup.dismiss()
 
@@ -304,10 +323,9 @@ class VentanaPrincipal(GridLayout):
         try:
             self.valorLeido=self.appLectura.ventana.valorLeido
         except:
-            self.valorLeido=None
-        else:
+            self.valorLeido=5
+        finally:
             self.quantum=self.valorLeido
-            self.tituloPpal.text+=f"Quantum: {self.quantum}"
         self._popup.dismiss()
 
     def abrirLectura(self):
@@ -392,26 +410,32 @@ class VentanaPrincipal(GridLayout):
             programa.qRest-=unidades
         elif comando in CPU_INST:
             programa.qRest-=1
+        elif comando=="retorne":
+            programa.qRest=0
         if programa.qRest<=0:
             programa.qRest=0
             if not programa.terminado:
                 self.colaPrioridad.enqueue(self.listaProgramas[self.programaActual])
+            print("Antes de seleccionar:",self.colaPrioridad._items)
             self.seleccionarQuantum()
 
     def seleccionarQuantum(self):
         self.programaPrevio=self.programaActual
 
-        if self.colaPrioridad.size()==0:
+        if self.colaPrioridad.size()==0 or (self.maxPrioridad!=None and self.prioridadUltimo>self.maxPrioridad):
             self.recuperarQuantum()
         try:
+            print("Durante la selección:",self.colaPrioridad._items)
             programa=self.colaPrioridad.dequeue()
             for i, p2 in enumerate(self.listaProgramas):
                 if p2==programa:
                     self.programaActual=i
                     self.apuntador=programa.insAct
+                    self.finPrograma=False
                     self.guardarAcumulador(self.programaPrevio)
                     self.cargarAcumulador()
             self.asignarQuantum()
+            self.seccionInstrucciones.resetSeccion()
         except:
             self.abrirError("No hay más programas por ejecutar")
 
@@ -422,6 +446,7 @@ class VentanaPrincipal(GridLayout):
             if valorPrioridad==None or programa.prioridad>valorPrioridad:
                 if not programa.terminado:
                     valorPrioridad=programa.prioridad
+        self.maxPrioridad=valorPrioridad
         for programa in self.listaProgramas:
             if programa.prioridad==valorPrioridad and not programa.terminado:
                 self.colaPrioridad.enqueue(programa)
@@ -431,7 +456,7 @@ class VentanaPrincipal(GridLayout):
         if self.programaActual==None:
             if self.indAlg in [0, 1, 2]:
                 self.seleccionarPrioridad(1)
-            else: 
+            elif self.indAlg in [3,4]: 
                 self.seleccionarPrioridad(0)
         if len(self.listaProgramas)==0:
             self.abrirError("No hay programas cargados en memoria")
